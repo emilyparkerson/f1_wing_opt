@@ -1,5 +1,5 @@
 # f1_wing_opt
-AA222 Final Project: F1 Multi-Element Rear Wing Optimization
+AA222 Final Project: F1 Multi-Element Rear Wing Optimization<<<<<<< pymead-setup
 
 # Install pymead
 In powershell, run the following:
@@ -33,3 +33,5 @@ Important: PATH changes only affect new terminal sessions. After saving, fully q
 Step 3: Verify it worked
 Open a fresh terminal in VS Code and run:
 mses
+=======
+f1_wing_opt/
