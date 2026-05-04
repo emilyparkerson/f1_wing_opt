@@ -1,9 +1,29 @@
+# Final Project Plan
+
+## Timeline
+
+**May 10/2:** Bayesian working on some objective function (Mariah)
+
+**May 13:** First airfoil working
+
+**May 15:** Project update due, start on second element optimization, third optimization
+
+**May 22:** Everything intergrated, working, hopefully run etc.
+
+**May 29:** Report due
+
+**June 5:** Peer review due
+
 ## Optimization Steps
 ### First element optimization
-   Starting fix AoA according to the seed airfoil |
-   Objective: maximize points for the track (favor Cl this much favor Cd this much) <--penalty for opposite |
-   Constraints: some thickness necessary, max Cl and Cd allowed |
+   Starting fix AoA according to the seed airfoil 
+   
+   Objective: maximize points for the track (favor Cl this much favor Cd this much) <--penalty for opposite 
+   
+   Constraints: some thickness necessary, max Cl and Cd allowed 
+   
    Design variables: t, t location, camber, and camber location
+
 ### Second element (multi-element) optimization
    Fix distance from first element, fixed first element, and fixed angle of attack for DRS, fixed distance between LE & TE |
    Objective: maximize points for the track (favor Cl this much favor Cd this much) <--penalty for opposite |
@@ -14,7 +34,6 @@
    Objective: minimize drag for DRS |
    Constraint: they can't overlap (max and min distance apart vertically and horizontally), AoA sweep |
    Design variables: angle of attack of second element
-   
 
 ## Code Layout
 main.py - ANTHONY
@@ -68,7 +87,7 @@ Connects Python code to MSES/Pymead.
 Inputs: airfoil geometry
 Outputs: aerodynamics variables (cl, cd, etc.)
 
-optimizer.py – MARIAH
+optimizer.py – MARIAH (outputs design variables optimized)
 Calls aero_interface.py and scoring.py repeatedly to optimize geometry
 
 log.py - ANTHONY
