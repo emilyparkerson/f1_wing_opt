@@ -1,18 +1,18 @@
 ## Optimization Steps
-1. First element optimization
-   Starting fix AoA according to the seed airfoil
-   Objective: maximize points for the track (favor Cl this much favor Cd this much) <--penalty for opposite
-   Constraints: some thickness necessary, max Cl and Cd allowed
+### First element optimization
+   Starting fix AoA according to the seed airfoil |
+   Objective: maximize points for the track (favor Cl this much favor Cd this much) <--penalty for opposite |
+   Constraints: some thickness necessary, max Cl and Cd allowed |
    Design variables: t, t location, camber, and camber location
-3. Second element (multi-element) optimization
-   Fix distance from first element, fixed first element, and fixed angle of attack for DRS, fixed distance between LE & TE
-   Objective: maximize points for the track (favor Cl this much favor Cd this much) <--penalty for opposite
-   Constraints: some thickness necessary
+### Second element (multi-element) optimization
+   Fix distance from first element, fixed first element, and fixed angle of attack for DRS, fixed distance between LE & TE |
+   Objective: maximize points for the track (favor Cl this much favor Cd this much) <--penalty for opposite |
+   Constraints: some thickness necessary |
    Design variables: t, t location, camber, and camber location
-5. Positional multi-element optimization
-   Fix first element, fix second element geometry, fix pivot point at 3/4c point
-   Objective: minimize drag for DRS
-   Constraint: they can't overlap (max and min distance apart vertically and horizontally), AoA sweep
+### Positional multi-element optimization
+   Fix first element, fix second element geometry, fix pivot point at 3/4c point |
+   Objective: minimize drag for DRS |
+   Constraint: they can't overlap (max and min distance apart vertically and horizontally), AoA sweep |
    Design variables: angle of attack of second element
    
 
