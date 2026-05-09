@@ -7,7 +7,7 @@ def valid_aero(cl, cd):
         return "Error: cl or cd does not exist"
     
     if cd <= 0:
-        raise ValueError("Drag cannot be negative")
+        return False
     
     return True
 

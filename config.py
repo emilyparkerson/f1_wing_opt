@@ -1,8 +1,3 @@
-#define constraints
-    #track weights
-    #invalid score
-    #design bounds
-
 #create dictionary for track weights
 TRACK_WEIGHTS = {
     "straights": 0.47,

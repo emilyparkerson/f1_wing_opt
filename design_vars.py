@@ -9,3 +9,11 @@ from dataclasses import dataclass
 class AeroResult:
     cl: float
     cd: float
+
+@dataclass
+class designParameters:
+    max_camber: float
+    max_camber_loc: float
+    max_thickness: float
+    max_thickness_loc: float
+
