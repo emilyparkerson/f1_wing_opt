@@ -5,7 +5,7 @@ AA222 Final Project: F1 Multi-Element Rear Wing Optimization<<<<<<< pymead-setup
 In powershell, run the following:
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 
-This will activate the environment each time it detencts it's there in the folder you're in. 
+This will activate the environment each time it detects it's there in the folder you're in. 
 
 Open/reopen editor (VS Code) and run the following from .\f1_wing_opt :
 python -m uv venv f1env --python 3.12
