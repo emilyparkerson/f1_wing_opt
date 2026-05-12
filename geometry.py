@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.interpolate import PchipInterpolator
+from config import SECOND_ELM_LOC
 
 #NOTE1: CAMBERED AIRFOIL MUST BE USED AS SEED AIRFOIL
 #NOTE2: PROVIDE SEED AIRFOIL IN SELIF FORMAT (DOES NOT HAVE TO BE INVERTED)
@@ -7,6 +8,7 @@ from scipy.interpolate import PchipInterpolator
 #function to generate new airfoil based on design parameters
 def new_airfoil(thickness_seed, x_common, designParameters, n_points, smoothing_fac, aoa):
 
+    #REMOVE ONCE DONE IN OPTIMZIER
     check_constraints(designParameters)
 
     max_camber = designParameters.max_camber
@@ -29,17 +31,17 @@ def new_airfoil(thickness_seed, x_common, designParameters, n_points, smoothing_
     #re-invert airfoil
     xu_morph, yu_morph, xl_morph, yl_morph = xu_morph, -yl_morph, xl_morph, -yu_morph
 
+    #fix issues with leading edge
+    xu_morph, yu_morph, xl_morph, yl_morph = fix_le(xu_morph, yu_morph, xl_morph, yl_morph)
+
     #re-rotate airfoil to seed angle of attack
     if abs(np.degrees(aoa)) > 0.0:
         xu_morph, yu_morph = unrotate_airfoil(xu_morph, yu_morph, aoa)
         xl_morph, yl_morph = unrotate_airfoil(xl_morph, yl_morph, aoa)
 
-    #fix issues with leading edge
-    xu_morph, yu_morph, xl_morph, yl_morph = fix_le(xu_morph, yu_morph, xl_morph, yl_morph)
-
     return xu_morph, yu_morph, xl_morph, yl_morph, camber_new, thickness_new, x_cos_coords
 
-#make sure inputted design parameters are withing constrained region
+#make sure inputted design parameters are withing constrained region (REMOVE ONCE DONE IN OPTIMIZER)
 def check_constraints(des):
     assert des.max_thickness > des.max_camber, "thickness must exceed camber"
     assert des.max_thickness >= 1.5 * des.max_camber, "thickness/camber ratio too low"
@@ -50,7 +52,7 @@ def check_constraints(des):
     assert des.max_thickness_loc < des.max_camber_loc, "thickness peak should be forward of camber peak"
 
 #function to return thickness and camber distributions based on seed coordinates
-def get_seed(x, y, smoothing_fac):
+def get_seed(x, y):
     x = np.asarray(x, dtype=float)
     y = np.asarray(y, dtype=float)
 
@@ -67,9 +69,7 @@ def get_seed(x, y, smoothing_fac):
 
     x, y = normalize(x, y)
     xu_seed, yu_seed, xl_seed, yl_seed = split_ul(x, y)
-    x_common, camber_seed, thickness_seed = get_c_t(
-        xu_seed, yu_seed, xl_seed, yl_seed, n_common=200
-    )
+    x_common, camber_seed, thickness_seed = get_c_t(xu_seed, yu_seed, xl_seed, yl_seed, n_common=200)
     return x_common, camber_seed, thickness_seed, aoa
 
 def normalize(x, y):
@@ -334,3 +334,87 @@ def unrotate_airfoil(x, y, angle_rad):
     y_rot = x * sin_a + y * cos_a
     
     return x_rot, y_rot
+
+#PHASE TWO: TWO ELEMENT, OPTIMIZING ROTATING ELEMENT
+def scale_airfoil(points, scale, origin=(0.0, 0.0)):
+
+    origin = np.array(origin)
+    return origin + scale * (points - origin)
+
+def translate_airfoil(points, dx, dy):
+    translated_points = points.copy()
+
+    #shift points by dx and dy
+    translated_points[:,0] = translated_points[:,0] + dx
+    translated_points[:,1] = translated_points[:,1] + dy
+
+    return translated_points
+
+#FOR PHASE 3 (IN PROGRESS)
+def rotate_airfoil_phase3(points, angle_deg, pivot=(0.0,0.0)):
+
+    #convert to radians
+    angle_rad = np.radians(angle_deg)
+    rotation_matrix = np.array([[np.cos(angle_rad), -np.sin(angle_rad)],
+                               [np.sin(angle_rad), np.cos(angle_rad)]])
+    
+    pivot = np.array(pivot)
+
+    shifted_points = points - pivot
+    #multiply each point by the rotation matrix transpose
+    rotated_points = shifted_points @ rotation_matrix.T
+    rotated_points = rotated_points + pivot
+
+    return rotated_points
+
+#FOR IMPORTING AND EXPORTING COORDINATES
+def get_coords(xu_morph, xl_morph, yu_morph, yl_morph, phase):
+    #get data from second element location dictionary
+    h = SECOND_ELM_LOC["horizontal"]
+    v = SECOND_ELM_LOC["vertical"]
+    #create arrays with upper and lower points (in Selig format)
+    upper = np.column_stack((xu_morph[::-1], yu_morph[::-1]))
+    lower = np.column_stack((xl_morph, yl_morph))
+    points = np.vstack((upper, lower[1:]))
+    
+    if phase == 2:
+        #rotate airfoil if needed (rotating about leading edge)
+        #points_p2 = rotate_airfoil_phase3(points_p2, 10, pivot=(0.0,0.0))
+
+        points_scaled = scale_airfoil(points, scale=0.435, origin=(0.0, 0.0))
+        translated_pts = translate_airfoil(points_scaled, h, v)
+        points = translated_pts
+    
+    return points
+
+#function to import dat file (coordinates must be in Selig format)
+def load_airfoil_dat(filepath: str):
+    x_list, y_list = [], []
+    with open(filepath) as f:
+        for line in f:
+            #split coordinates based on white space
+            parts = line.split()
+            #if line has two values
+            if len(parts) == 2:
+                try:
+                    x_list.append(float(parts[0]))
+                    y_list.append(float(parts[1]))
+                #skip if cannot be converted to a float
+                except ValueError:
+                    pass
+    return np.array(x_list), np.array(y_list)
+
+def export_mses_geometry(filename, elements):
+
+    with open(filename, "w") as f:
+
+        f.write(f"{len(elements)}\n")
+
+        for i, element in enumerate(elements):
+
+            f.write(f"element_{i+1}\n")
+
+            for point in element:
+                f.write(f"{point[0]:.6f} {point[1]:.6f}\n")
+
+            f.write("\n")   

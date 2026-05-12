@@ -27,10 +27,30 @@ def scoring_p1(aero_result):
 
     #"normalize" df and cd with respect to seed airfoil 
     # so that improving cl and reducing cd from seed airfoil are awarded higher score
-    df_n = df / REF_VALS["df"]
-    cd_n = cd / REF_VALS["cd"]
+    df_n = df / REF_VALS["df_p1"]
+    cd_n = cd / REF_VALS["cd_p1"]
 
     #calculate score (goal is to maximize this value)
+    score = df_n*cl_weight - cd_n*cd_weight
+
+    return score
+
+def scoring_p2(aero_result):
+    cl = aero_result.cl
+    cd = aero_result.cd
+    
+    if not valid_aero(cl, cd):
+        return INVALID_SCORE
+    
+    cd_weight = TRACK_WEIGHTS["straights"]
+    cl_weight = TRACK_WEIGHTS["turns"]
+
+    df = -cl
+    
+    # Use Phase 2 reference values from the two-element seed
+    df_n = df / REF_VALS["df_p2"]
+    cd_n = cd / REF_VALS["cd_p2"]
+
     score = df_n*cl_weight - cd_n*cd_weight
 
     return score
