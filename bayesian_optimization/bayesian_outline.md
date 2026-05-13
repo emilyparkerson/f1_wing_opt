@@ -138,17 +138,17 @@ For low-to-moderate dimensions (your case, ~3-10 D), this works very well.
 Putting it all together — these are the implementation steps in the order I'd tackle them:
 
 **Phase 1: Get a working GP**
-1. Implement the kernel function (squared exponential is fine)
-2. Given training data (X, y), implement `predict(x_star)` returning (μ̂, σ̂)
-3. Implement hyperparameter optimization (maximize log marginal likelihood)
+✅1. Implement the kernel function (squared exponential is fine)
+✅2. Given training data (X, y), implement `predict(x_star)` returning (μ̂, σ̂) (this is GP)
+✅3. Implement hyperparameter optimization (maximize log marginal likelihood)
 4. **Test on a 1D toy function** — fit GP to a few points from sin(x), plot mean ± 2σ vs. true function, check that the GP behaves sensibly (matches data exactly at training points, has high uncertainty between)
 
 **Phase 2: Build the acquisition function**
-5. Implement `expected_improvement(x, gp, y_best)` using the formula above
-6. **Test it** by evaluating EI across a 1D grid for a fixed GP — verify it's high at promising points, low at well-evaluated points
+✅5. Implement `expected_improvement(x, gp, y_best)` using the formula above
+✅6. **Test it** by evaluating EI across a 1D grid for a fixed GP — verify it's high at promising points, low at well-evaluated points
 
 **Phase 3: Build the loop**
-7. Implement `optimize_acquisition` (random sampling + local refinement)
+✅7. Implement `optimize_acquisition` (random sampling + local refinement)
 8. Wire it all into a loop: initial random sample → fit GP → maximize EI → evaluate → repeat
 9. **Test on a benchmark** — Branin (2D), Hartmann (6D). Convergence in tens of iterations is the sign things work
 
@@ -183,3 +183,59 @@ You don't start knowing the GP. You **build it as you go**. At each iteration:
 The GP is a *running model* that gets sharper as you collect more data. The whole point of BO is that the GP doesn't need to be accurate everywhere — just accurate *enough* in the regions worth evaluating.
 
 If you want, next step is for me to walk through implementing the GP from scratch (mapping the textbook equations to working Python), or implementing the EI loop. Tell me which piece feels most uncertain and we'll dig in.
+
+## The big idea
+Since each evaluation is expensive, you want to be strategic about where you evaluate next. Random sampling is wasteful. Grid search is impossible (too many points). Local optimizers like Nelder-Mead get stuck in the first valley they find.
+BO's insight: build a probabilistic model of f from the points you've already evaluated, then use that model to decide where to evaluate next.
+The model isn't just "what do I think f looks like" — it's also "where am I uncertain." That uncertainty is what makes BO smart. It lets you explore (evaluate where you don't know much) and exploit (evaluate where things look promising) in a principled way.
+
+## The two main ingredients
+### Ingredient 1: A Gaussian Process (GP)
+The GP is your model of f. Given the points you've evaluated so far, the GP tells you, at any new point x:
+
+A predicted value μ̂(x) — "I think f(x) is about this"
+A predicted uncertainty σ̂(x) — "but I'm this unsure about it"
+
+Visually, if you sketch the GP:
+
+At points you've already evaluated → mean matches the data, uncertainty is zero
+Far from any evaluated point → mean defaults to some prior (often zero), uncertainty is high
+Between evaluated points → mean smoothly interpolates, uncertainty is moderate
+
+You can think of it as a "best guess plus error bars" function over the whole design space, that updates as you collect more data.
+
+### Ingredient 2: An acquisition function
+This is the rule that picks where to evaluate next. It takes the GP (mean + uncertainty everywhere) and returns a single number for each candidate x: "how desirable is it to evaluate here?"
+The most common one is Expected Improvement (EI): "if I evaluate at x, what's the expected amount by which I'll beat my current best?" It naturally balances:
+
+High μ̂ regions (looks promising → high EI) — exploitation
+High σ̂ regions (could be surprising → high EI) — exploration
+
+So EI is high either where things look good or where you don't know yet. Both are worth investigating.
+
+
+
+RUNNER SCRIPT (run_bo.py)
+                          │
+                          │ creates
+                          ▼
+                  BayesianOptimizer
+                          │
+                          │ .run() loop:
+                          ▼
+       ┌──────────────────┴───────────────────┐
+       │                                       │
+       ▼                                       ▼
+  fit_hyperparameters(X, y)         optimize_acquisition(predict, y_best, bounds)
+       │                                       │
+       │ uses                                   │ uses
+       ▼                                       ▼
+  sq_exp_kernel                       expected_improvement
+                                                │
+                                                │ uses
+                                                ▼
+                                          gp_predict(X, y, X_new)
+                                                │
+                                                │ uses
+                                                ▼
+                                          sq_exp_kernel
