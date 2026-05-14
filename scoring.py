@@ -1,5 +1,6 @@
 #config.py contains information about track and seed airfoil values
 from config import TRACK_WEIGHTS, REF_VALS, INVALID_SCORE
+from design_vars import designParameters
 
 #check if provided aero coefficients are valid
 def valid_aero(cl, cd):
@@ -11,12 +12,31 @@ def valid_aero(cl, cd):
     
     return True
 
+#make sure inputted design parameters are withing constrained region
+def valid_constraints(des):
+    if not 0.06 <= des.max_thickness <= 0.18:
+        return False
+
+    if not 0.01 <= des.max_camber <= 0.12:
+        return False
+
+    if not 0.20 <= des.max_thickness_loc <= 0.45:
+        return False
+
+    if not 0.30 <= des.max_camber_loc <= 0.65:
+        return False
+
+    if des.max_thickness_loc < des.max_camber_loc:
+        return False
+
+    return True
+
 #phase 1: fixed element, cl and cd are weighted based on track configuration
 def scoring_p1(aero_result):
     cl = aero_result.cl
     cd = aero_result.cd
     
-    if not valid_aero(cl, cd):
+    if not valid_aero(cl, cd) or not valid_constraints(designParameters):
         return INVALID_SCORE
     
     cd_weight = TRACK_WEIGHTS["straights"]
