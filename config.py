@@ -6,11 +6,19 @@ TRACK_WEIGHTS = {
 
 #create dictionary from seed airfoil data (df = -cl)
 REF_VALS = {
+<<<<<<< HEAD
     "df_p1": 1.2,
     "cd_p1": 0.4,
     "df_p2": 1.2,
     "cd_p2": 0.4,
     "alpha": -2
+=======
+    "df_p1": 1.08588,
+    "cd_p1": 0.0145,
+    "df_p2": 1.2,
+    "cd_p2": 0.4,
+    "alpha": 0
+>>>>>>> 33c4a9966f88cd4a82943f6e0f5ab3c66f50335e
 }
 
 #invalid score for BAD designs (large negative number so that design is not chosen)
@@ -18,10 +26,17 @@ INVALID_SCORE = -1e8
 
 #design constraints
 PHASE1_BOUNDS = {
+<<<<<<< HEAD
     "max_camber": (0.00, 0.15),
     "max_camber_loc": (0.30, 0.70),
     "max_thickness": (0.06, 0.25),
     "max_thickness_loc": (0.15, 0.45),
+=======
+    "max_camber": (0.02, 0.20),
+    "max_camber_loc": (0.30, 0.65),
+    "max_thickness": (0.06, 0.18),
+    "max_thickness_loc": (0.20, 0.45),
+>>>>>>> 33c4a9966f88cd4a82943f6e0f5ab3c66f50335e
 }
 
 #second element leading edge position relative to first element trailing edge
