@@ -35,7 +35,7 @@ def valid_constraints(des):
     return True
 
 #phase 1: fixed element, cl and cd are weighted based on track configuration
-def scoring_p1(aero_result):
+def scoring_p1(aero_result, designParameters):
     cl = aero_result.cl
     cd = aero_result.cd
     
