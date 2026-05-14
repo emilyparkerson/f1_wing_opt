@@ -18,10 +18,10 @@ INVALID_SCORE = -1e8
 
 #design constraints
 PHASE1_BOUNDS = {
-    "max_camber": (0.02, 0.20),
-    "max_camber_loc": (0.30, 0.65),
-    "max_thickness": (0.06, 0.18),
-    "max_thickness_loc": (0.20, 0.45),
+    "max_camber": (0.00, 0.15),
+    "max_camber_loc": (0.30, 0.70),
+    "max_thickness": (0.06, 0.25),
+    "max_thickness_loc": (0.15, 0.45),
 }
 
 #second element leading edge position relative to first element trailing edge
