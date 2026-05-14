@@ -14,16 +14,16 @@ def valid_aero(cl, cd):
 
 #make sure inputted design parameters are withing constrained region
 def valid_constraints(des):
-    if not 0.06 <= des.max_thickness <= 0.18:
+    if not 0.06 <= des.max_thickness <= 0.25:
         return False
 
-    if not 0.01 <= des.max_camber <= 0.12:
+    if not 0.00 <= des.max_camber <= 0.15:
         return False
 
-    if not 0.20 <= des.max_thickness_loc <= 0.45:
+    if not 0.15 <= des.max_thickness_loc <= 0.45:
         return False
 
-    if not 0.30 <= des.max_camber_loc <= 0.65:
+    if not 0.30 <= des.max_camber_loc <= 0.70:
         return False
 
     if des.max_thickness_loc < des.max_camber_loc:
