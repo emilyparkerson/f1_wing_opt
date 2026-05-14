@@ -29,6 +29,9 @@ def valid_constraints(des):
     if des.max_thickness_loc < des.max_camber_loc:
         return False
 
+    if des.max_thickness > des.max_camber:
+        return False
+    
     return True
 
 #phase 1: fixed element, cl and cd are weighted based on track configuration
