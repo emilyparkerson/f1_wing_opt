@@ -32,7 +32,7 @@ def new_airfoil(thickness_seed, x_common, designParameters, n_points, smoothing_
     xu_morph, yu_morph, xl_morph, yl_morph = xu_morph, -yl_morph, xl_morph, -yu_morph
 
     #fix issues with leading edge
-    #xu_morph, yu_morph, xl_morph, yl_morph = fix_le(xu_morph, yu_morph, xl_morph, yl_morph)
+    xu_morph, yu_morph, xl_morph, yl_morph = fix_le(xu_morph, yu_morph, xl_morph, yl_morph)
 
     #re-rotate airfoil to seed angle of attack
     if abs(np.degrees(aoa)) > 0.0:
@@ -44,11 +44,11 @@ def new_airfoil(thickness_seed, x_common, designParameters, n_points, smoothing_
 #make sure inputted design parameters are withing constrained region (REMOVE ONCE DONE IN OPTIMIZER)
 def check_constraints(des):
     assert des.max_thickness > des.max_camber, "thickness must exceed camber"
-    assert des.max_thickness >= 1.5 * des.max_camber, "thickness/camber ratio too low"
-    assert 0.06 <= des.max_thickness <= 0.18
-    assert 0.01 <= des.max_camber <= 0.12
-    assert 0.20 <= des.max_thickness_loc <= 0.45
-    assert 0.30 <= des.max_camber_loc <= 0.65
+    assert des.max_thickness >= 1.0 * des.max_camber, "thickness/camber ratio too low"
+    assert 0.06 <= des.max_thickness <= 0.25
+    assert 0.00 <= des.max_camber <= 0.15
+    assert 0.15 <= des.max_thickness_loc <= 0.45
+    assert 0.30 <= des.max_camber_loc <= 0.70
     assert des.max_thickness_loc < des.max_camber_loc, "thickness peak should be forward of camber peak"
 
 #function to return thickness and camber distributions based on seed coordinates
@@ -275,10 +275,17 @@ def rebuild(x, camber, thickness):
     dydx[0] = 0.0
     dydx[-1] = 0.0
 
-    # use purely vertical thickness application
-# much more stable near the trailing edge
+    #compute angle theta
+    theta = np.arctan(dydx)
 
-    theta_blended = np.zeros_like(x)
+    #blend: 0 = pure vertical, 1 = full perpendicular
+    blend = np.ones_like(x)
+    #use vertical application for first 30% and last 10% of chord (otherwise many oscillations)
+    le_end = np.searchsorted(x, 0.30)
+    te_start = np.searchsorted(x, 0.90)
+    blend[:le_end] = np.linspace(0, 1, le_end)
+    blend[te_start:] = np.linspace(1, 0, len(x) - te_start)
+    theta_blended = theta * blend
 
     half_t = 0.5 * thickness
 

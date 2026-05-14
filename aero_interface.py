@@ -1,6 +1,7 @@
+import os
+import tempfile
 import numpy as np
 import matplotlib.pyplot as plt
-import tempfile
 
 from pymead.analysis.calc_aero_data import (
     calculate_aero_data,
@@ -14,191 +15,199 @@ from pymead.core.geometry_collection import GeometryCollection
 
 from design_vars import AeroResult
 
-
-# -------------------------------------------------
-# OPTIONAL CUSTOM NACA GENERATOR
-# CURRENTLY DISABLED
-# -------------------------------------------------
-
-# def generate_naca4(m, p, t, n_points=200):
-#
-#     beta = np.linspace(0.0, np.pi, n_points)
-#
-#     x = 0.5 * (1.0 - np.cos(beta))
-#
-#     yt = (
-#         5.0 * t * (
-#             0.2969 * np.sqrt(x)
-#             - 0.1260 * x
-#             - 0.3516 * x**2
-#             + 0.2843 * x**3
-#             - 0.1036 * x**4
-#         )
-#     )
-#
-#     yc = np.zeros_like(x)
-#     dyc_dx = np.zeros_like(x)
-#
-#     for i in range(len(x)):
-#
-#         if x[i] < p:
-#
-#             yc[i] = (
-#                 m / p**2
-#                 * (2.0 * p * x[i] - x[i]**2)
-#             )
-#
-#             dyc_dx[i] = (
-#                 2.0 * m / p**2
-#                 * (p - x[i])
-#             )
-#
-#         else:
-#
-#             yc[i] = (
-#                 m / (1.0 - p)**2
-#                 * (
-#                     (1.0 - 2.0 * p)
-#                     + 2.0 * p * x[i]
-#                     - x[i]**2
-#                 )
-#             )
-#
-#             dyc_dx[i] = (
-#                 2.0 * m / (1.0 - p)**2
-#                 * (p - x[i])
-#             )
-#
-#     theta = np.arctan(dyc_dx)
-#
-#     xu = x - yt * np.sin(theta)
-#     yu = yc + yt * np.cos(theta)
-#
-#     xl = x + yt * np.sin(theta)
-#     yl = yc - yt * np.cos(theta)
-#
-#     x_coords = np.concatenate([
-#         xu[::-1],
-#         xl[1:]
-#     ])
-#
-#     y_coords = np.concatenate([
-#         yu[::-1],
-#         yl[1:]
-#     ])
-#
-#     coords = np.column_stack((x_coords, y_coords))
-#
-#     le_idx = np.argmin(coords[:,0])
-#
-#     coords[le_idx] = [0.0, 0.0]
-#
-#     return coords
+from geometry import (
+    load_airfoil_dat,
+    get_seed,
+    new_airfoil,
+    get_coords
+)
 
 
 # -------------------------------------------------
 # RUN MSES
 # -------------------------------------------------
 
-def run_mses(design,
-             name="naca23012-il",
-             alpha=0.0,
-             mach=0.2,
-             reynolds=1e6):
+def run_mses(
+        design,
+        name="candidate_airfoil",
+        alpha=-2.0,
+        mach=0.2,
+        reynolds=1e6,
+        plot_geometry=False,
+        plot_comparison=False):
+
+    print("\nCurrent Design:")
+    print(f"Max Camber:          {design.max_camber}")
+    print(f"Max Camber Location: {design.max_camber_loc}")
+    print(f"Max Thickness:       {design.max_thickness}")
+    print(f"Max Thickness Loc:   {design.max_thickness_loc}")
 
     geo_col = GeometryCollection()
 
-    print("\nCurrent Design:")
-
-    print(f"Max Camber: {design.max_camber}")
-    print(f"Max Camber Location: {design.max_camber_loc}")
-
-    print(f"Max Thickness: {design.max_thickness}")
-    print(f"Max Thickness Location: {design.max_thickness_loc}")
-
     # -------------------------------------------------
-    # OPTIONAL CUSTOM GENERATED AIRFOIL
-    # CURRENTLY DISABLED
+    # LOAD SEED AIRFOIL
     # -------------------------------------------------
 
-    # coords = generate_naca4(
-    #     m=design.max_camber,
-    #     p=design.max_camber_loc,
-    #     t=design.max_thickness,
-    #     n_points=200
-    # )
-    #
-    # plt.figure(figsize=(10,4))
-    #
-    # plt.plot(
-    #     coords[:,0],
-    #     coords[:,1],
-    #     linewidth=2
-    # )
-    #
-    # plt.axis('equal')
-    #
-    # plt.grid(True)
-    #
-    # plt.show()
-    #
-    # dat_file = tempfile.gettempdir() + "/candidate_airfoil.dat"
-    #
-    # np.savetxt(dat_file, coords)
-    #
-    # polyline = geo_col.add_polyline(
-    #     source=dat_file
-    # )
+    x_seed, y_seed = load_airfoil_dat(
+        "inboard_seed_phase1.txt"
+    )
 
     # -------------------------------------------------
-    # KNOWN WORKING AIRFOIL
+    # GET SEED CAMBER/THICKNESS
+    # -------------------------------------------------
+
+    x_common, camber_seed, thickness_seed, aoa = get_seed(
+        x_seed,
+        y_seed
+    )
+
+    # -------------------------------------------------
+    # GENERATE NEW AIRFOIL
+    # -------------------------------------------------
+
+    xu_morph, yu_morph, xl_morph, yl_morph, camber_new, thickness_new, x_cos_coords = new_airfoil(
+        thickness_seed,
+        x_common,
+        design,
+        160,
+        smoothing_fac=None,
+        aoa=aoa
+    )
+
+    # -------------------------------------------------
+    # CONVERT TO SELIG FORMAT COORDS
+    # -------------------------------------------------
+
+    raw_coords = get_coords(
+        xu_morph,
+        xl_morph,
+        yu_morph,
+        yl_morph,
+        phase=1
+    )
+
+    # -------------------------------------------------
+    # PLOT GEOMETRY
+    # -------------------------------------------------
+
+    if plot_geometry:
+
+        plt.figure(figsize=(10, 4))
+
+        plt.plot(
+            raw_coords[:, 0],
+            raw_coords[:, 1],
+            linewidth=2
+        )
+
+        plt.axis("equal")
+
+        plt.grid(True)
+
+        plt.xlabel("x/c")
+        plt.ylabel("y/c")
+
+        plt.title(f"{name} — morphed airfoil")
+
+        plt.show()
+
+    # -------------------------------------------------
+    # SAVE DAT FILE
+    # -------------------------------------------------
+
+    dat_file = os.path.join(
+        tempfile.gettempdir(),
+        f"{name}_input.dat"
+    )
+
+    np.savetxt(dat_file, raw_coords)
+
+    # -------------------------------------------------
+    # LOAD INTO PYMEAD
     # -------------------------------------------------
 
     polyline = geo_col.add_polyline(
-        source="naca23012-il"
+        source=dat_file
     )
 
     airfoil = polyline.add_polyline_airfoil()
 
     print("\nAirfoil object created successfully")
 
-    print(airfoil)
-
     mea = geo_col.add_mea([airfoil])
 
-    # -------------------------------------------------
-    # EXTRACT COORDS FOR PLOTTING
-    # -------------------------------------------------
-
-    coords = airfoil.coords
+    coords = np.array(airfoil.coords)
 
     # -------------------------------------------------
-    # MSET SETTINGS
+    # OPTIONAL COMPARISON PLOT
     # -------------------------------------------------
 
-    mset_settings = MSETSettings(
-        multi_airfoil_grid={
-            "Airfoil-1": AirfoilMSETMeshingParameters()
-        },
-        airfoil_side_points=180
-    )
+    if plot_comparison:
+
+        fig, axes = plt.subplots(
+            1,
+            2,
+            figsize=(14, 4)
+        )
+
+        axes[0].plot(
+            x_seed,
+            y_seed
+        )
+
+        axes[0].set_title("Seed Airfoil")
+
+        axes[0].axis("equal")
+
+        axes[0].grid(True)
+
+        axes[1].plot(
+            coords[:, 0],
+            coords[:, 1]
+        )
+
+        axes[1].set_title("Morphed Airfoil")
+
+        axes[1].axis("equal")
+
+        axes[1].grid(True)
+
+        plt.suptitle(
+            f"{name} — geometry comparison"
+        )
+
+        plt.show()
 
     # -------------------------------------------------
     # MSES SETTINGS
     # -------------------------------------------------
 
-    mses_settings = MSESSettings(
-        xtrs={"Airfoil-1": [1.0, 1.0]},
-        Ma=mach,
-        Re=reynolds,
-        alfa=alpha,
-        alfa_Cl_mode=0,
-        timeout=300.0
+    mset_settings = MSETSettings(
+
+        multi_airfoil_grid={
+            "Airfoil-1":
+            AirfoilMSETMeshingParameters()
+        },
+
+        airfoil_side_points=180
     )
 
-    # -------------------------------------------------
-    # MPLOT SETTINGS
-    # -------------------------------------------------
+    mses_settings = MSESSettings(
+
+        xtrs={
+            "Airfoil-1": [1.0, 1.0]
+        },
+
+        Ma=mach,
+
+        Re=reynolds,
+
+        alfa=alpha,
+
+        alfa_Cl_mode=0,
+
+        timeout=300.0
+    )
 
     mplot_settings = MPLOTSettings(
         Tecplot=True
@@ -213,49 +222,59 @@ def run_mses(design,
         print("\nRunning MSES...")
 
         aero_data, logs = calculate_aero_data(
+
             conn=None,
+
             airfoil_coord_dir=tempfile.gettempdir(),
-            airfoil_name="naca23012-il",
+
+            airfoil_name=name,
+
             mea=mea,
+
             tool="MSES",
+
             mset_settings=mset_settings,
+
             mses_settings=mses_settings,
+
             mplot_settings=mplot_settings,
+
             export_Cp=False,
+
             save_aero_data=True,
         )
 
         print("\nAero Data:")
         print(aero_data)
 
-        if not aero_data["converged"]:
-
-            print("MSES did not converge")
-
-            return AeroResult(
-                cl=None,
-                cd=None,
-                coords=None
-            )
-
-        if aero_data["errored_out"]:
+        if aero_data.get("errored_out", False):
 
             print("MSES errored out")
 
             return AeroResult(
                 cl=None,
                 cd=None,
-                coords=None
+                coords=coords
             )
 
-        if aero_data["timed_out"]:
+        if aero_data.get("timed_out", False):
 
             print("MSES timed out")
 
             return AeroResult(
                 cl=None,
                 cd=None,
-                coords=None
+                coords=coords
+            )
+
+        if not aero_data.get("converged", False):
+
+            print("MSES did not converge")
+
+            return AeroResult(
+                cl=None,
+                cd=None,
+                coords=coords
             )
 
         cl = aero_data["Cl"]
@@ -272,11 +291,11 @@ def run_mses(design,
 
     except Exception as e:
 
-        print("\nMSES failed")
+        print("\nMSES failed with exception:")
         print(e)
 
         return AeroResult(
             cl=None,
             cd=None,
-            coords=None
+            coords=coords
         )
