@@ -15,7 +15,7 @@ Approach:
 
 '''
 
-from .acquisitions import expected_improvement
+from bayesian_optimization.acquisitions import expected_improvement
 import numpy as np
 from scipy.optimize import minimize
 

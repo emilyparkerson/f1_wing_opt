@@ -10,7 +10,10 @@ Assumes zero mean function: m(x) = 0.
 '''
 
 import numpy as np
-from .kernels import sq_exp_kernel
+
+from bayesian_optimization.kernels import (
+    sq_exp_kernel
+)
 
 def m(x):
     mean = 0 # Right now assuming this is 0
