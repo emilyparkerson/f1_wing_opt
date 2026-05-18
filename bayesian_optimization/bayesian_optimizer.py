@@ -26,9 +26,8 @@ var for variance (book uses ν̂ for predictive variance — equation 18.16)
 '''
 
 import numpy as np
-from kernels import lengthscale_hp_optimization
-from optimize_acquisition import optimize_acquisition
-from kernels import lengthscale_hp_optimization
+from .kernels import lengthscale_hp_optimization
+from .optimize_acquisition import optimize_acquisition
 
 # By normalizing the variables, the applied length scale is meaningful to all of the design variables
 def normalize(x, bounds):
@@ -90,7 +89,7 @@ def bayesian_loop(X0, y0, objective_fn, bounds, max_iter=20):
 
         # Denormalize and evaluate the expensive objective
         x_next = denormalize(x_next_norm, bounds)
-        y_next = objective_fn(x_next)
+        y_next = objective_fn(x_next, )
 
         # Update the history
         X = np.vstack([X, x_next])

@@ -17,7 +17,7 @@ For MAXIMIZATION. xi is a small exploration parameter.
 
 import numpy as np
 from scipy import stats
-from gp import gp_predict
+from .gp import gp_predict
 
 
 def expected_improvement(X, y, X_star, l, y_best, xi = 0.01):
