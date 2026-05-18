@@ -19,7 +19,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scoring import scoring_p1
 from design_vars import AeroResult, designParameters
-from config import SECOND_ELM_LOC
+from config import PHASE1_SEED_PATH, PHASE2_SEED_PATH, SECOND_ELM_LOC
 from geometry import (get_seed, new_airfoil, get_coords, plot_airfoil, load_airfoil_dat, export_mses_geometry)
 
 #cl_cand = -2.0
@@ -67,7 +67,7 @@ points_p1 = get_coords(xu_morph, xl_morph, yu_morph, yl_morph, phase=1)
 
 export_mses_geometry(r"C:\Users\ecpar\Downloads\phase1_geometry.txt", [points_p1])
 
-plot_airfoil(des, phase=1)
+#plot_airfoil(des, PHASE1_SEED_PATH, phase=1)
 
 #PHASE 2
 x_p2, y_p2 = load_airfoil_dat(r"C:\Users\ecpar\Downloads\outboard_seed_phase2.txt")
@@ -84,6 +84,8 @@ points_p2 = get_coords(xu_morph_p2, xl_morph_p2, yu_morph_p2, yl_morph_p2, phase
 phase2_elements = [points_p1, points_p2]
 
 export_mses_geometry(r"C:\Users\ecpar\Downloads\phase2_geometry.txt", phase2_elements)
+
+plot_airfoil(des, PHASE2_SEED_PATH, phase=2, fixed_el_pts=points_p1)
 
 plt.plot(x_p1, y_p1,  marker='o',label="seed")
 plt.plot(xu_morph, yu_morph,  marker='o',label="upper new")

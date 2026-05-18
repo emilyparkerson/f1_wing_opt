@@ -18,6 +18,7 @@ INVALID_SCORE = -1e8
 
 #path to seed file
 PHASE1_SEED_PATH = r"C:\Users\ecpar\Downloads\inboard_seed_phase1.txt"
+PHASE2_SEED_PATH = r"C:\Users\ecpar\Downloads\inboard_seed_phase2.txt"
 
 #design constraints
 PHASE1_BOUNDS = {

@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import PchipInterpolator
-from config import PHASE1_SEED_PATH, SECOND_ELM_LOC
+from config import SECOND_ELM_LOC
 
 #NOTE1: CAMBERED AIRFOIL MUST BE USED AS SEED AIRFOIL
 #NOTE2: PROVIDE SEED AIRFOIL IN SELIF FORMAT (DOES NOT HAVE TO BE INVERTED)
@@ -52,9 +52,9 @@ def new_airfoil(thickness_seed, x_common, designParameters, n_points, smoothing_
 #     assert 0.30 <= des.max_camber_loc <= 0.70
 #     assert des.max_thickness_loc < des.max_camber_loc, "thickness peak should be forward of camber peak"
 
-def plot_airfoil(des, phase):
+def plot_airfoil(des, seed_path, phase, fixed_el_pts=None):
     #update correct path in config.py
-    x_seed, y_seed = load_airfoil_dat(PHASE1_SEED_PATH)
+    x_seed, y_seed = load_airfoil_dat(seed_path)
 
     #get seed airfoil and new airfoil
     x_common, camber_seed, thickness_seed, aoa = get_seed(x_seed, y_seed)
@@ -66,11 +66,19 @@ def plot_airfoil(des, phase):
 
     #plot
     plt.figure()
+
+    #if phase 2, plot fixed element
+    if fixed_el_pts is not None:
+        plt.plot(fixed_el_pts[:,0], fixed_el_pts[:,1], '-')
+
+    #plot new element
     plt.plot(points[:,0], points[:,1], '-')
-    plt.axis("equal")
+
+    #format plot
     plt.xlabel("x/c, dimensionless")
     plt.ylabel("y/c, dimensionless")
     plt.grid(True)
+    plt.axis("equal")
     plt.show()
 
 #function to return thickness and camber distributions based on seed coordinates
@@ -270,7 +278,7 @@ def fix_le(xu, yu, xl, yl, n=160):
     xl_fixed, yl_fixed = clean_and_resample(xl, yl, n)
 
     #trim trailing edge to prevent irregular coordinates 
-    te_cutoff = 0.99 #trimming starting at 99% of chord)
+    te_cutoff = 0.97 #trimming starting at 97% of chord)
     #trim coordinates
     mask_u = xu_fixed <= te_cutoff
     mask_l = xl_fixed <= te_cutoff
