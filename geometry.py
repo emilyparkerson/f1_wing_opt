@@ -8,12 +8,9 @@ from config import SECOND_ELM_LOC
 #function to generate new airfoil based on design parameters
 def new_airfoil(thickness_seed, x_common, designParameters, n_points, smoothing_fac, aoa):
 
-<<<<<<< HEAD
-=======
     #REMOVE ONCE DONE IN OPTIMZIER
     check_constraints(designParameters)
 
->>>>>>> 33c4a9966f88cd4a82943f6e0f5ab3c66f50335e
     max_camber = designParameters.max_camber
     max_camber_loc = designParameters.max_camber_loc
     max_thickness = designParameters.max_thickness
@@ -44,17 +41,6 @@ def new_airfoil(thickness_seed, x_common, designParameters, n_points, smoothing_
 
     return xu_morph, yu_morph, xl_morph, yl_morph, camber_new, thickness_new, x_cos_coords
 
-<<<<<<< HEAD
-# #make sure inputted design parameters are withing constrained region
-# def check_constraints(des):
-#     assert des.max_thickness > des.max_camber, "thickness must exceed camber"
-#     assert des.max_thickness >= 1.5 * des.max_camber, "thickness/camber ratio too low"
-#     assert 0.06 <= des.max_thickness <= 0.18
-#     assert 0.01 <= des.max_camber <= 0.12
-#     assert 0.20 <= des.max_thickness_loc <= 0.45
-#     assert 0.30 <= des.max_camber_loc <= 0.65
-#     assert des.max_thickness_loc < des.max_camber_loc, "thickness peak should be forward of camber peak"
-=======
 #make sure inputted design parameters are withing constrained region (REMOVE ONCE DONE IN OPTIMIZER)
 def check_constraints(des):
     assert des.max_thickness > des.max_camber, "thickness must exceed camber"
@@ -64,7 +50,6 @@ def check_constraints(des):
     assert 0.15 <= des.max_thickness_loc <= 0.45
     assert 0.30 <= des.max_camber_loc <= 0.70
     assert des.max_thickness_loc < des.max_camber_loc, "thickness peak should be forward of camber peak"
->>>>>>> 33c4a9966f88cd4a82943f6e0f5ab3c66f50335e
 
 #function to return thickness and camber distributions based on seed coordinates
 def get_seed(x, y):
