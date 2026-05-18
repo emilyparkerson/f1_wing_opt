@@ -11,7 +11,7 @@
     7. export geometry into dat file (call export_mses_geometry)
     8. run design through mses, get cl and cd and store in AeroResult dataclass
     9. call scoring function and save result
-    10. repeat 3-10 until ...
+    10. repeat 3-10 until iterations are complete
     11. repeat 1-10 for phase 2
 
 '''
@@ -20,7 +20,8 @@ import matplotlib.pyplot as plt
 from scoring import scoring_p1
 from design_vars import AeroResult, designParameters
 from config import PHASE1_SEED_PATH, PHASE2_SEED_PATH, SECOND_ELM_LOC
-from geometry import (get_seed, new_airfoil, get_coords, plot_airfoil, load_airfoil_dat, export_mses_geometry)
+from geometry import (get_seed, new_airfoil, get_coords_phase3,
+     get_coords, plot_airfoil, plot_phase3, load_airfoil_dat, export_mses_geometry)
 
 #cl_cand = -2.0
 #cd_cand = 0.15
@@ -67,13 +68,13 @@ points_p1 = get_coords(xu_morph, xl_morph, yu_morph, yl_morph, phase=1)
 
 export_mses_geometry(r"C:\Users\ecpar\Downloads\phase1_geometry.txt", [points_p1])
 
-#plot_airfoil(des, PHASE1_SEED_PATH, phase=1)
+plot_airfoil(des, PHASE1_SEED_PATH, phase=1)
 
 #PHASE 2
 x_p2, y_p2 = load_airfoil_dat(r"C:\Users\ecpar\Downloads\outboard_seed_phase2.txt")
 #to shift coords when plotting 
-h = SECOND_ELM_LOC["horizontal"]
-v = SECOND_ELM_LOC["vertical"]
+#h = SECOND_ELM_LOC["horizontal"]
+#v = SECOND_ELM_LOC["vertical"]
 
 x_common_p2, camber_seed_p2, thickness_seed_p2, aoa_p2 = get_seed(x_p2, y_p2)
 xu_morph_p2, yu_morph_p2, xl_morph_p2, yl_morph_p2, camber_new_p2, thickness_new_p2, x_cos_coords_p2 = new_airfoil(thickness_seed_p2, 
@@ -87,13 +88,22 @@ export_mses_geometry(r"C:\Users\ecpar\Downloads\phase2_geometry.txt", phase2_ele
 
 plot_airfoil(des, PHASE2_SEED_PATH, phase=2, fixed_el_pts=points_p1)
 
-plt.plot(x_p1, y_p1,  marker='o',label="seed")
-plt.plot(xu_morph, yu_morph,  marker='o',label="upper new")
-plt.plot(xl_morph, yl_morph, marker='o', label="lower new")
-plt.axis("equal")
-plt.legend()
-plt.title("Fixed Element (Phase 1)")
-plt.show()
+#PHASE 3
+points_p3 = get_coords_phase3(points_p2, 0)
+
+phase3_elements = [points_p1, points_p3]
+
+export_mses_geometry(r"C:\Users\ecpar\Downloads\phase3_geometry.txt", phase3_elements)
+
+plot_phase3(points_p1, points_p3, 5)
+
+# plt.plot(x_p1, y_p1,  marker='o',label="seed")
+# plt.plot(xu_morph, yu_morph,  marker='o',label="upper new")
+# plt.plot(xl_morph, yl_morph, marker='o', label="lower new")
+# plt.axis("equal")
+# plt.legend()
+# plt.title("Fixed Element (Phase 1)")
+# plt.show()
 
 # plt.plot(x_p2, y_p2,  marker='o',label="seed")
 # plt.plot(points_p2_scaled[:,0], points_p2_scaled[:, 1],  marker='o',label="upper new")
@@ -101,14 +111,16 @@ plt.show()
 # plt.legend()
 # plt.title("Rotating Element (Phase 2)")
 # plt.show()
-plt.plot(x_p1, y_p1,  marker='o',label="seed first element")
-plt.plot(x_p2 + h, y_p2 + v,  marker='o',label="seed second element")
-plt.plot(points_p1[:,0], points_p1[:, 1],  marker='o',label="new first element")
-plt.plot(points_p2[:, 0], points_p2[:, 1],  marker='o',label="new second element")
-plt.axis("equal")
-plt.legend()
-plt.title("Two Element Wing")
-plt.show()
+
+#plot seed airfoil versus morphed airfoil
+# plt.plot(x_p1, y_p1,  marker='o',label="seed first element")
+# plt.plot(x_p2 + h, y_p2 + v,  marker='o',label="seed second element")
+# plt.plot(points_p1[:,0], points_p1[:, 1],  marker='o',label="new first element")
+# plt.plot(points_p2[:, 0], points_p2[:, 1],  marker='o',label="new second element")
+# plt.axis("equal")
+# plt.legend()
+# plt.title("Two Element Wing")
+# plt.show()
 
 # plt.plot(x_common, camber_seed,  marker='o',label="seed camberline")
 # plt.plot(x_cos_coords, camber_new,  marker='o',label="new camberline")
@@ -134,4 +146,10 @@ plt.show()
 # plt.xlim(0, 0.1)  # zoom into LE
 # plt.legend()
 # plt.title("Seed camber and thickness near LE")
+# plt.show()
+
+# #PLOT PHASE 3
+# plt.plot(points_p2[:,0],points_p2[:,1])
+# plt.plot(points_p3[:,0],points_p3[:,1])
+# plt.axis("equal")
 # plt.show()

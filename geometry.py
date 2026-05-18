@@ -52,7 +52,7 @@ def new_airfoil(thickness_seed, x_common, designParameters, n_points, smoothing_
 #     assert 0.30 <= des.max_camber_loc <= 0.70
 #     assert des.max_thickness_loc < des.max_camber_loc, "thickness peak should be forward of camber peak"
 
-def plot_airfoil(des, seed_path, phase, fixed_el_pts=None):
+def plot_airfoil(des, seed_path, phase, fixed_el_pts=None, aoa_phase3=0.0):
     #update correct path in config.py
     x_seed, y_seed = load_airfoil_dat(seed_path)
 
@@ -62,7 +62,7 @@ def plot_airfoil(des, seed_path, phase, fixed_el_pts=None):
     x_common, des, 160, smoothing_fac= None, aoa=aoa)
 
     #get coordinates
-    points = get_coords(xu_morph, xl_morph, yu_morph, yl_morph, phase)
+    points = get_coords(xu_morph, xl_morph, yu_morph, yl_morph, phase, aoa_deg=aoa_phase3)
 
     #plot
     plt.figure()
@@ -397,8 +397,35 @@ def rotate_airfoil_phase3(points, angle_deg, pivot=(0.0,0.0)):
 
     return rotated_points
 
+def get_coords_phase3(sec_el_pts, aoa_deg):
+    
+    #second element leading edge
+    leading_edge = sec_el_pts[np.argmin(sec_el_pts[:,0])]
+
+    #rotate phase 2 airfoil about second element leading edge
+    rotated_sec_el = rotate_airfoil_phase3(sec_el_pts, aoa_deg, pivot=leading_edge)
+
+    return rotated_sec_el
+
+def plot_phase3(fixed_el_pts, sec_el_pts, aoa_deg):
+
+    phase3_coords = get_coords_phase3(sec_el_pts=sec_el_pts, aoa_deg=aoa_deg)
+
+    #plot fixed element
+    plt.plot(fixed_el_pts[:,0], fixed_el_pts[:,1], "-")
+    #plot rotated second element
+    plt.plot(phase3_coords[:,0], phase3_coords[:,1],"-")
+
+    #format plot
+    plt.xlabel("x/c, dimensionless")
+    plt.ylabel("y/c, dimensionless")
+    plt.grid(True)
+    plt.axis("equal")
+    plt.show()
+
+
 #FOR IMPORTING AND EXPORTING COORDINATES
-def get_coords(xu_morph, xl_morph, yu_morph, yl_morph, phase):
+def get_coords(xu_morph, xl_morph, yu_morph, yl_morph, phase, aoa_deg= 0.0):
     #get data from second element location dictionary
     h = SECOND_ELM_LOC["horizontal"]
     v = SECOND_ELM_LOC["vertical"]
@@ -408,9 +435,6 @@ def get_coords(xu_morph, xl_morph, yu_morph, yl_morph, phase):
     points = np.vstack((upper, lower[1:]))
     
     if phase == 2:
-        #rotate airfoil if needed (rotating about leading edge)
-        #points_p2 = rotate_airfoil_phase3(points_p2, 10, pivot=(0.0,0.0))
-
         points_scaled = scale_airfoil(points, scale=0.435, origin=(0.0, 0.0))
         translated_pts = translate_airfoil(points_scaled, h, v)
         points = translated_pts
