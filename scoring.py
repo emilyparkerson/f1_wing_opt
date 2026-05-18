@@ -1,19 +1,20 @@
 #config.py contains information about track and seed airfoil values
 from config import TRACK_WEIGHTS, REF_VALS, INVALID_SCORE
-from design_vars import designParameters
 
 #check if provided aero coefficients are valid
 def valid_aero(cl, cd):
+
     if cl is None or cd is None:
-        return "Error: cl or cd does not exist"
-    
+        return False
+
     if cd <= 0:
         return False
-    
+
     return True
 
 #make sure inputted design parameters are withing constrained region
 def valid_constraints(des):
+
     if not 0.06 <= des.max_thickness <= 0.25:
         return False
 
@@ -26,12 +27,15 @@ def valid_constraints(des):
     if not 0.30 <= des.max_camber_loc <= 0.70:
         return False
 
-    if des.max_thickness_loc < des.max_camber_loc:
+    if des.max_thickness <= des.max_camber:
         return False
 
-    if des.max_thickness > des.max_camber:
+    if des.max_thickness < 1.5 * des.max_camber:
         return False
-    
+
+    if des.max_thickness_loc >= des.max_camber_loc:
+        return False
+
     return True
 
 #phase 1: fixed element, cl and cd are weighted based on track configuration
@@ -58,11 +62,11 @@ def scoring_p1(aero_result, designParameters):
 
     return score
 
-def scoring_p2(aero_result):
+def scoring_p2(aero_result, designParameters):
     cl = aero_result.cl
     cd = aero_result.cd
     
-    if not valid_aero(cl, cd):
+    if not valid_aero(cl, cd) or not valid_constraints(designParameters):
         return INVALID_SCORE
     
     cd_weight = TRACK_WEIGHTS["straights"]
@@ -70,7 +74,7 @@ def scoring_p2(aero_result):
 
     df = -cl
     
-    # Use Phase 2 reference values from the two-element seed
+    #use Phase 2 reference values from the two-element seed
     df_n = df / REF_VALS["df_p2"]
     cd_n = cd / REF_VALS["cd_p2"]
 
