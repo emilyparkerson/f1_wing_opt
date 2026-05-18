@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from bayesian_optimization.bayesian_optimizer import bayesian_loop
+from .bayesian_optimizer import bayesian_loop
 
 def run_bo_phase(training_csv, bounds_csv, scoring_function, phase_name, max_iter=25,):
 

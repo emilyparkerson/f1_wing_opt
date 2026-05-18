@@ -15,7 +15,7 @@ Approach:
 
 '''
 
-from acquisitions import expected_improvement
+from .acquisitions import expected_improvement
 import numpy as np
 from scipy.optimize import minimize
 
