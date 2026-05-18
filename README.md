@@ -1,11 +1,23 @@
 # f1_wing_opt
 AA222 Final Project: F1 Multi-Element Rear Wing Optimization<<<<<<< pymead-setup
 
+# To-do
+
+clean up the plotting - can emily's method work for plotting the final stuff?
+
+What can we delete? combine? etc? plottying.py??????
+
+put stuff in folders
+
+delete generate_airfoil
+
+fix the constraints and bounds such that it only runs valid geometries and they are solved correctly
+
 # Install pymead
 In powershell, run the following:
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 
-This will activate the environment each time it detencts it's there in the folder you're in. 
+This will activate the environment each time it detects it's there in the folder you're in. 
 
 Open/reopen editor (VS Code) and run the following from .\f1_wing_opt :
 python -m uv venv f1env --python 3.12
@@ -33,5 +45,5 @@ Important: PATH changes only affect new terminal sessions. After saving, fully q
 Step 3: Verify it worked
 Open a fresh terminal in VS Code and run:
 mses
-=======
+
 f1_wing_opt/
