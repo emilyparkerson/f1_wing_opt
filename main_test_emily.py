@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 from scoring import scoring_p1
 from design_vars import AeroResult, designParameters
 from config import SECOND_ELM_LOC
-from geometry import (get_seed, new_airfoil, get_coords, load_airfoil_dat, export_mses_geometry)
+from geometry import (get_seed, new_airfoil, get_coords, plot_airfoil, load_airfoil_dat, export_mses_geometry)
 
 #cl_cand = -2.0
 #cd_cand = 0.15
@@ -31,7 +31,7 @@ des = designParameters(max_camber=0.08, max_camber_loc=0.3, max_thickness=0.15, 
 des_p2 = designParameters(max_camber=0.04, max_camber_loc=0.60, max_thickness=0.15, max_thickness_loc=0.40)
 #des = designParameters(max_camber=0.01, max_camber_loc=0.50, max_thickness=0.10, max_thickness_loc=0.30)
 
-score = scoring_p1(cand_result)
+score = scoring_p1(cand_result, des)
 
 print("Phase 1 score:", score)
 
@@ -66,6 +66,8 @@ xu_morph, yu_morph, xl_morph, yl_morph, camber_new, thickness_new, x_cos_coords 
 points_p1 = get_coords(xu_morph, xl_morph, yu_morph, yl_morph, phase=1)
 
 export_mses_geometry(r"C:\Users\ecpar\Downloads\phase1_geometry.txt", [points_p1])
+
+plot_airfoil(des, phase=1)
 
 #PHASE 2
 x_p2, y_p2 = load_airfoil_dat(r"C:\Users\ecpar\Downloads\outboard_seed_phase2.txt")

@@ -16,6 +16,9 @@ REF_VALS = {
 #invalid score for BAD designs (large negative number so that design is not chosen)
 INVALID_SCORE = -1e8
 
+#path to seed file
+PHASE1_SEED_PATH = r"C:\Users\ecpar\Downloads\inboard_seed_phase1.txt"
+
 #design constraints
 PHASE1_BOUNDS = {
     "max_camber": (0.02, 0.20),

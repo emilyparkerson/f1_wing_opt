@@ -1,6 +1,7 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from scipy.interpolate import PchipInterpolator
-from config import SECOND_ELM_LOC
+from config import PHASE1_SEED_PATH, SECOND_ELM_LOC
 
 #NOTE1: CAMBERED AIRFOIL MUST BE USED AS SEED AIRFOIL
 #NOTE2: PROVIDE SEED AIRFOIL IN SELIF FORMAT (DOES NOT HAVE TO BE INVERTED)
@@ -9,7 +10,7 @@ from config import SECOND_ELM_LOC
 def new_airfoil(thickness_seed, x_common, designParameters, n_points, smoothing_fac, aoa):
 
     #REMOVE ONCE DONE IN OPTIMZIER
-    check_constraints(designParameters)
+    #check_constraints(designParameters)
 
     max_camber = designParameters.max_camber
     max_camber_loc = designParameters.max_camber_loc
@@ -42,14 +43,35 @@ def new_airfoil(thickness_seed, x_common, designParameters, n_points, smoothing_
     return xu_morph, yu_morph, xl_morph, yl_morph, camber_new, thickness_new, x_cos_coords
 
 #make sure inputted design parameters are withing constrained region (REMOVE ONCE DONE IN OPTIMIZER)
-def check_constraints(des):
-    assert des.max_thickness > des.max_camber, "thickness must exceed camber"
-    assert des.max_thickness >= 1.0 * des.max_camber, "thickness/camber ratio too low"
-    assert 0.06 <= des.max_thickness <= 0.25
-    assert 0.00 <= des.max_camber <= 0.15
-    assert 0.15 <= des.max_thickness_loc <= 0.45
-    assert 0.30 <= des.max_camber_loc <= 0.70
-    assert des.max_thickness_loc < des.max_camber_loc, "thickness peak should be forward of camber peak"
+# def check_constraints(des):
+#     assert des.max_thickness > des.max_camber, "thickness must exceed camber"
+#     assert des.max_thickness >= 1.0 * des.max_camber, "thickness/camber ratio too low"
+#     assert 0.06 <= des.max_thickness <= 0.25
+#     assert 0.00 <= des.max_camber <= 0.15
+#     assert 0.15 <= des.max_thickness_loc <= 0.45
+#     assert 0.30 <= des.max_camber_loc <= 0.70
+#     assert des.max_thickness_loc < des.max_camber_loc, "thickness peak should be forward of camber peak"
+
+def plot_airfoil(des, phase):
+    #update correct path in config.py
+    x_seed, y_seed = load_airfoil_dat(PHASE1_SEED_PATH)
+
+    #get seed airfoil and new airfoil
+    x_common, camber_seed, thickness_seed, aoa = get_seed(x_seed, y_seed)
+    xu_morph, yu_morph, xl_morph, yl_morph, camber_new, thickness_new, x_cos_coords = new_airfoil(thickness_seed, 
+    x_common, des, 160, smoothing_fac= None, aoa=aoa)
+
+    #get coordinates
+    points = get_coords(xu_morph, xl_morph, yu_morph, yl_morph, phase)
+
+    #plot
+    plt.figure()
+    plt.plot(points[:,0], points[:,1], '-')
+    plt.axis("equal")
+    plt.xlabel("x/c, dimensionless")
+    plt.ylabel("y/c, dimensionless")
+    plt.grid(True)
+    plt.show()
 
 #function to return thickness and camber distributions based on seed coordinates
 def get_seed(x, y):
@@ -58,7 +80,7 @@ def get_seed(x, y):
 
     #get seed angle of attack (for re-rotation later)
     aoa = get_aoa(x, y)
-    print(f"Detected Seed Airfoil AoA: {np.degrees(aoa):.2f} degrees")
+    #print(f"Detected Seed Airfoil AoA: {np.degrees(aoa):.2f} degrees")
 
     #remove original angle of attack (functions only work at 0 degrees)
     if abs(np.degrees(aoa)) > 0.0:
@@ -311,7 +333,7 @@ def get_aoa(x, y):
     dx = x[te_idx] - x[le_idx]
     dy = y[te_idx] - y[le_idx]
     
-    print(np.arctan2(dy, dx))
+    #print(np.arctan2(dy, dx))
 
     return np.arctan2(dy, dx)  #radians
 
@@ -417,4 +439,4 @@ def export_mses_geometry(filename, elements):
             for point in element:
                 f.write(f"{point[0]:.6f} {point[1]:.6f}\n")
 
-            f.write("\n")   
+            f.write("\n") 
