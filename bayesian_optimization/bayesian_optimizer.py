@@ -28,6 +28,7 @@ var for variance (book uses ν̂ for predictive variance — equation 18.16)
 import numpy as np
 from bayesian_optimization.kernels import lengthscale_hp_optimization
 from bayesian_optimization.optimize_acquisition import optimize_acquisition
+from setup.constraints import normalized_constraints
 
 # By normalizing the variables, the applied length scale is meaningful to all of the design variables
 def normalize(x, bounds):
@@ -42,7 +43,7 @@ def denormalize(x_norm, bounds):
     denormalized_x = bounds[:, 0] + x_norm * (bounds[:, 1] - bounds[:, 0])
     return denormalized_x
 
-def bayesian_loop(X0, y0, objective_fn, bounds, max_iter=20):
+def bayesian_loop(X0, y0, objective_fn, bounds, constraints, max_iter=20):
     '''
     Run Bayesian optimization for max_iter iterations
 
@@ -77,7 +78,7 @@ def bayesian_loop(X0, y0, objective_fn, bounds, max_iter=20):
         y_best_centered = y_centered.max()
         normalized_bounds = [(0,1)] * X.shape[1]
         x_next_norm = optimize_acquisition(X_norm, y_centered, y_best_centered, 
-                                           normalized_bounds, l)
+                                           normalized_bounds, l, constraints=normalized_constraints(constraints, bounds_arr))
 
         # Denormalize and evaluate the expensive objective
         x_next = denormalize(x_next_norm, bounds)

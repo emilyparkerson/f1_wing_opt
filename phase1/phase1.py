@@ -1,6 +1,8 @@
 from pathlib import Path
 
-from scoring import scoring_p1
+from setup.scoring import scoring_p1
+
+from setup.constraints import airfoil_constraints
 
 from setup.design_vars import (
     designParameters,
@@ -22,7 +24,7 @@ PHASE_CONFIG = {
     "reynolds": 1e6,
 
     # Training data
-    "training_n":6,
+    "training_n":10,
 
     # Initial design (for MSES, training data is used for BO)
     "seed_airfoil": HERE / "inboard_seed_phase1.txt",
@@ -38,12 +40,12 @@ PHASE_CONFIG = {
         max_camber_loc=(0.30, 0.70),
         max_thickness=(0.06, 0.25),
         max_thickness_loc=(0.15, 0.45)),
+    "constraints": airfoil_constraints,
 
     # Bayesian optimization settings
     "bo": {"training_csv": HERE / "training_data_p1.csv",
         "bounds_csv": HERE / "design_variable_bounds_p1.csv",
-        "max_iter": 25,
-        "training_n": 6},
+        "max_iter": 25},
 
     # Random/local search settings
     "random_search": {"n_iterations": 25,
@@ -51,5 +53,5 @@ PHASE_CONFIG = {
             "max_camber": 0.003,
             "max_camber_loc": 0.02,
             "max_thickness": 0.005,
-            "max_thickness_loc": 0.0}}
+            "max_thickness_loc": 0.01}}
 }

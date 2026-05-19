@@ -17,7 +17,7 @@
 '''
 import numpy as np
 import matplotlib.pyplot as plt
-from scoring import scoring_p1
+from setup.scoring import scoring_p1
 from setup.design_vars import AeroResult, designParameters
 from setup.track import PHASE1_SEED_PATH, PHASE2_SEED_PATH, SECOND_ELM_LOC
 from setup.geometry import (get_seed, new_airfoil, get_coords_phase3,
