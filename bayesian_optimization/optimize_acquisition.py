@@ -41,8 +41,6 @@ def optimize_acquisition(X, y, y_best, bounds, l, n_rand=1000, n_local_starts=10
 
     # Take top few of the evaluated points
     top_idx = np.argsort(EI_rand)[-n_local_starts:]
-    EI_rand_top = EI_rand[top_idx]
-    X_rand_top = X_random[top_idx]
 
     # Initialize EI_best and x_best from the best random point
     EI_best = EI_rand[top_idx[-1]] # last in sorted order = highest EI

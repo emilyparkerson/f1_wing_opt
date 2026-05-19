@@ -73,17 +73,9 @@ def bayesian_loop(X0, y0, objective_fn, bounds, max_iter=20):
         # Fit the GP parameters (only lengthscale at the moment)
         l = lengthscale_hp_optimization(X_norm, y_centered)
 
-        # Fins next point in the normalized space
+        # Finds next point in the normalized space
         y_best_centered = y_centered.max()
         normalized_bounds = [(0,1)] * X.shape[1]
-
-        # DEBUG: add these lines
-        print(f"  X.shape = {X.shape}")
-        print(f"  X.shape[1] = {X.shape[1]}")
-        print(f"  normalized_bounds = {normalized_bounds}")
-        print(f"  np.array(normalized_bounds).shape = {np.array(normalized_bounds).shape}")
-
-
         x_next_norm = optimize_acquisition(X_norm, y_centered, y_best_centered, 
                                            normalized_bounds, l)
 

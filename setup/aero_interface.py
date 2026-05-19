@@ -13,9 +13,9 @@ from pymead.analysis.calc_aero_data import (
 
 from pymead.core.geometry_collection import GeometryCollection
 
-from design_vars import AeroResult
+from setup.design_vars import AeroResult
 
-from geometry import (
+from setup.geometry import (
     load_airfoil_dat,
     get_seed,
     new_airfoil,
@@ -34,7 +34,8 @@ def run_mses(
         mach=0.2,
         reynolds=1e6,
         plot_geometry=False,
-        plot_comparison=False):
+        plot_comparison=False,
+        seed_airfoil=''):
 
     print("\nCurrent Design:")
     print(f"Max Camber:          {design.max_camber}")
@@ -48,9 +49,7 @@ def run_mses(
     # LOAD SEED AIRFOIL
     # -------------------------------------------------
 
-    x_seed, y_seed = load_airfoil_dat(
-        "inboard_seed_phase1.txt"
-    )
+    x_seed, y_seed = load_airfoil_dat(seed_airfoil)
 
     # -------------------------------------------------
     # GET SEED CAMBER/THICKNESS
@@ -91,51 +90,30 @@ def run_mses(
     # -------------------------------------------------
 
     if plot_geometry:
-
         plt.figure(figsize=(10, 4))
-
-        plt.plot(
-            raw_coords[:, 0],
-            raw_coords[:, 1],
-            linewidth=2
-        )
-
+        plt.plot(raw_coords[:, 0],raw_coords[:, 1],linewidth=2)
         plt.axis("equal")
-
         plt.grid(True)
-
         plt.xlabel("x/c")
         plt.ylabel("y/c")
-
         plt.title(f"{name} — morphed airfoil")
-
         plt.show()
 
     # -------------------------------------------------
     # SAVE DAT FILE
     # -------------------------------------------------
 
-    dat_file = os.path.join(
-        tempfile.gettempdir(),
-        f"{name}_input.dat"
-    )
-
+    dat_file = os.path.join(tempfile.gettempdir(),f"{name}_input.dat")
     np.savetxt(dat_file, raw_coords)
 
     # -------------------------------------------------
     # LOAD INTO PYMEAD
     # -------------------------------------------------
 
-    polyline = geo_col.add_polyline(
-        source=dat_file
-    )
-
+    polyline = geo_col.add_polyline(source=dat_file)
     airfoil = polyline.add_polyline_airfoil()
-
     print("\nAirfoil object created successfully")
-
     mea = geo_col.add_mea([airfoil])
-
     coords = np.array(airfoil.coords)
 
     # -------------------------------------------------
@@ -143,39 +121,16 @@ def run_mses(
     # -------------------------------------------------
 
     if plot_comparison:
-
-        fig, axes = plt.subplots(
-            1,
-            2,
-            figsize=(14, 4)
-        )
-
-        axes[0].plot(
-            x_seed,
-            y_seed
-        )
-
+        fig, axes = plt.subplots(1,2,figsize=(14, 4))
+        axes[0].plot(x_seed,y_seed)
         axes[0].set_title("Seed Airfoil")
-
         axes[0].axis("equal")
-
         axes[0].grid(True)
-
-        axes[1].plot(
-            coords[:, 0],
-            coords[:, 1]
-        )
-
+        axes[1].plot(coords[:, 0],coords[:, 1])
         axes[1].set_title("Morphed Airfoil")
-
         axes[1].axis("equal")
-
         axes[1].grid(True)
-
-        plt.suptitle(
-            f"{name} — geometry comparison"
-        )
-
+        plt.suptitle(f"{name} — geometry comparison")
         plt.show()
 
     # -------------------------------------------------
@@ -183,12 +138,8 @@ def run_mses(
     # -------------------------------------------------
 
     mset_settings = MSETSettings(
-
-        multi_airfoil_grid={
-            "Airfoil-1":
-            AirfoilMSETMeshingParameters()
-        },
-
+        multi_airfoil_grid={"Airfoil-1": 
+            AirfoilMSETMeshingParameters()},
         airfoil_side_points=180
     )
 
@@ -199,13 +150,9 @@ def run_mses(
         },
 
         Ma=mach,
-
         Re=reynolds,
-
         alfa=alpha,
-
         alfa_Cl_mode=0,
-
         timeout=300.0
     )
 
@@ -224,23 +171,14 @@ def run_mses(
         aero_data, logs = calculate_aero_data(
 
             conn=None,
-
             airfoil_coord_dir=tempfile.gettempdir(),
-
             airfoil_name=name,
-
             mea=mea,
-
             tool="MSES",
-
             mset_settings=mset_settings,
-
             mses_settings=mses_settings,
-
             mplot_settings=mplot_settings,
-
             export_Cp=False,
-
             save_aero_data=True,
         )
 
@@ -258,24 +196,12 @@ def run_mses(
             )
 
         if aero_data.get("timed_out", False):
-
             print("MSES timed out")
-
-            return AeroResult(
-                cl=None,
-                cd=None,
-                coords=coords
-            )
+            return AeroResult(cl=None,cd=None,coords=coords)
 
         if not aero_data.get("converged", False):
-
             print("MSES did not converge")
-
-            return AeroResult(
-                cl=None,
-                cd=None,
-                coords=coords
-            )
+            return AeroResult(cl=None,cd=None,coords=coords)
 
         cl = aero_data["Cl"]
         cd = aero_data["Cd"]
@@ -283,19 +209,11 @@ def run_mses(
         print(f"\nCl = {cl:.5f}")
         print(f"Cd = {cd:.5f}")
 
-        return AeroResult(
-            cl=cl,
-            cd=cd,
-            coords=coords
-        )
+        return AeroResult(cl=cl,cd=cd,coords=coords)
 
     except Exception as e:
 
         print("\nMSES failed with exception:")
         print(e)
 
-        return AeroResult(
-            cl=None,
-            cd=None,
-            coords=coords
-        )
+        return AeroResult(cl=None,cd=None,coords=coords)
