@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 
 from setup.aero_interface import run_mses
 
-from optimizer import perturb_design
+from optimizers.optimizer import perturb_design
 
 from log import (
     initialize_log,

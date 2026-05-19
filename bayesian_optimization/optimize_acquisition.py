@@ -19,7 +19,7 @@ from bayesian_optimization.acquisitions import expected_improvement
 import numpy as np
 from scipy.optimize import minimize
 
-def optimize_acquisition(X, y, y_best, bounds, l, n_rand=1000, n_local_starts=10):
+def optimize_acquisition(X, y, y_best, bounds, l, constraints, n_rand=1000, n_local_starts=10):
     '''
     Maximize EI over the bounded domain.
 
@@ -33,10 +33,24 @@ def optimize_acquisition(X, y, y_best, bounds, l, n_rand=1000, n_local_starts=10
     bounds = np.array(bounds)  # size (d, 2)
     d = bounds.shape[0]        # number of design variables because each has bounds
 
-    # Sample many random points in the design space bounds
-    X_random = np.random.uniform(bounds[:, 0], bounds[:, 1], size=(n_rand, d))
+    # Generate some random points
+    feasible_X = []
+    max_attempts = 20 * n_rand
+    attempts = 0
+    while len(feasible_X) < n_rand and attempts < max_attempts:
+        candidate = np.random.uniform(bounds[:, 0], bounds[:, 1], size=(d,))
+        if constraints(candidate):
+            feasible_X.append(candidate)
+        attempts += 1
 
-    # Evaluate the expected improvement at each point
+    if len(feasible_X) < n_rand:
+        print(f"  Warning: only {len(feasible_X)} feasible points "
+            f"in {attempts} attempts.")
+
+    # Only use the feasible points
+    X_random = np.array(feasible_X)   
+
+    # Continue with EI on the feasible points
     EI_rand = expected_improvement(X, y, X_random, l, y_best)
 
     # Take top few of the evaluated points
@@ -55,10 +69,9 @@ def optimize_acquisition(X, y, y_best, bounds, l, n_rand=1000, n_local_starts=10
 
     for i in top_idx:
         result = minimize(neg_EI, X_random[i], method='L-BFGS-B', bounds=bounds)
-
-        # result.fun is -EI at the optimum, so EI = -result.fun
-        EI_refined = -result.fun
-
+        if not constraints(result.x):
+            continue
+        EI_refined = -result.fun # result.fun is -EI at the optimum, so EI = -result.fun
         # Return best x found
         if EI_refined > EI_best:
             EI_best = EI_refined

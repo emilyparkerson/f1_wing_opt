@@ -37,11 +37,13 @@ def run_mses(
         plot_comparison=False,
         seed_airfoil=''):
 
+    '''
     print("\nCurrent Design:")
     print(f"Max Camber:          {design.max_camber}")
     print(f"Max Camber Location: {design.max_camber_loc}")
     print(f"Max Thickness:       {design.max_thickness}")
     print(f"Max Thickness Loc:   {design.max_thickness_loc}")
+    '''
 
     geo_col = GeometryCollection()
 
@@ -181,9 +183,10 @@ def run_mses(
             export_Cp=False,
             save_aero_data=True,
         )
-
+        '''
         print("\nAero Data:")
         print(aero_data)
+        '''
 
         if aero_data.get("errored_out", False):
 

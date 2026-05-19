@@ -1,5 +1,5 @@
 from pathlib import Path
-from scoring import scoringp2
+from setup.scoring import scoringp2
 from bayesian_optimization.run_bo_phase import run_bo_phase
 
 HERE = Path(__file__).parent

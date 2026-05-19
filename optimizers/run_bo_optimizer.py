@@ -2,7 +2,6 @@ import numpy as np
 
 from setup.aero_interface import run_mses
 from setup.design_vars import designParameters
-from scoring import constraint_penalty
 
 from bayesian_optimization.bayesian_optimizer import bayesian_loop
 
@@ -16,7 +15,6 @@ def design_from_x(x):
         max_thickness_loc=x[3],
     )
 
-
 def x_from_design(design):
     """Convert design parameters to BO's optimization vector."""
     return np.array([
@@ -28,7 +26,7 @@ def x_from_design(design):
 
 
 def generate_training_data(seed_design, bounds_arr, training_n, scoring_fn,
-                           alpha, mach, reynolds, seed_airfoil):
+                           alpha, mach, reynolds, seed_airfoil, constraints):
     """
     Build initial training data: the seed design + (training_n - 1) random points.
     """
@@ -36,17 +34,19 @@ def generate_training_data(seed_design, bounds_arr, training_n, scoring_fn,
 
     # Random perturbations of the seed
     rng = np.random.default_rng(42)
-    for _ in range(training_n - 1):
+    while len(X_list) < training_n:
         x = rng.uniform(bounds_arr[:, 0], bounds_arr[:, 1])
-        X_list.append(x)
-
+        if constraints(x):      
+            X_list.append(x)
+            print("Appended training airfoil")
+    print(len(X_list), "training airfoils generated")
+        
     # Evaluate all of them
+    print(len(X_list), "evaluating training airfoils...")
+
     y_list = []
     for x in X_list:
         design = design_from_x(x)
-        if constraint_penalty(design) > 0:
-            y_list.append(-1.0)
-            continue
         aero = run_mses(
             design=design,
             name="init",
@@ -56,6 +56,8 @@ def generate_training_data(seed_design, bounds_arr, training_n, scoring_fn,
             seed_airfoil=seed_airfoil,
         )
         y_list.append(scoring_fn(aero, design))
+    print(len(y_list), "training scores generated")
+
 
     return np.array(X_list), np.array(y_list)
 
@@ -69,6 +71,8 @@ def run_bo_optimizer(config):
     alpha = config["alpha"]
     mach = config["mach"]
     reynolds = config["reynolds"]
+    constraints = config["constraints"]
+    training_n = config["training_n"]
 
     # Load bounds first (needed for both initial training and BO)
     bounds_arr = np.genfromtxt(
@@ -79,27 +83,25 @@ def run_bo_optimizer(config):
     bounds = [tuple(b) for b in bounds_arr]
 
     # Build initial training data from the seed
+    print("-----------------------------------")
     print("Building initial training data...")
+    print("-----------------------------------")
+
     X0, y0 = generate_training_data(
         seed_design=seed_design,
         bounds_arr=bounds_arr,
-        training_n=bo_config.get("n_initial", 8),
+        training_n=training_n,
         scoring_fn=scoring_fn,
         alpha=alpha,
         mach=mach,
         reynolds=reynolds,
         seed_airfoil=seed_airfoil,
+        constraints=constraints,
     )
-    print(f"  {len(X0)} initial points, best y = {y0.max():.4f}\n")
 
     # Objective for BO to call each iteration
     def objective_fn(x):
         design = design_from_x(x)
-
-        penalty = constraint_penalty(design)
-        if penalty > 0:
-            return -1.0 - penalty
-
         aero_result = run_mses(
             design=design,
             name="bo_candidate",
@@ -113,11 +115,16 @@ def run_bo_optimizer(config):
         return scoring_fn(aero_result, design)
 
     # Run BO
+    print("-----------------------------------")
+    print("Running the Bayesian Optimization loop...")
+    print("-----------------------------------")
+
     X, y, x_best, y_best = bayesian_loop(
         X0=X0,
         y0=y0,
         objective_fn=objective_fn,
         bounds=bounds,
+        constraints=constraints,
         max_iter=bo_config["max_iter"],
     )
 
