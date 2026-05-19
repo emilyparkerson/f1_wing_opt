@@ -1,5 +1,5 @@
 import numpy as np
-from design_vars import designParameters
+from setup.design_vars import designParameters
 
 
 def clip_design(design, bounds):

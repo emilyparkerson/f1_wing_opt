@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-from aero_interface import run_mses
+from setup.aero_interface import run_mses
 
 from optimizer import perturb_design
 

@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import PchipInterpolator
-from config import SECOND_ELM_LOC
+from setup.track import SECOND_ELM_LOC
 
 #NOTE1: CAMBERED AIRFOIL MUST BE USED AS SEED AIRFOIL
 #NOTE2: PROVIDE SEED AIRFOIL IN SELIF FORMAT (DOES NOT HAVE TO BE INVERTED)

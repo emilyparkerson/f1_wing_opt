@@ -18,9 +18,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scoring import scoring_p1
-from design_vars import AeroResult, designParameters
-from config import PHASE1_SEED_PATH, PHASE2_SEED_PATH, SECOND_ELM_LOC
-from geometry import (get_seed, new_airfoil, get_coords_phase3,
+from setup.design_vars import AeroResult, designParameters
+from setup.track import PHASE1_SEED_PATH, PHASE2_SEED_PATH, SECOND_ELM_LOC
+from setup.geometry import (get_seed, new_airfoil, get_coords_phase3,
      get_coords, plot_airfoil, plot_phase3, load_airfoil_dat, export_mses_geometry)
 
 #cl_cand = -2.0

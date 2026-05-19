@@ -1,49 +1,42 @@
-from config import TRACK_WEIGHTS, REF_VALS, INVALID_SCORE
-
+from setup.track import TRACK_WEIGHTS, REF_VALS, INVALID_SCORE
 
 # -------------------------------------------------
 # CHECK AERO VALIDITY
 # -------------------------------------------------
 
 def valid_aero(cl, cd):
-
     if cl is None or cd is None:
         return False
-
     if cd <= 0:
         return False
-
+    
     return True
-
 
 # -------------------------------------------------
 # CHECK DESIGN CONSTRAINTS
 # -------------------------------------------------
 
-def valid_constraints(des):
+def constraint_penalty(des):
 
-    if not 0.06 <= des.max_thickness <= 0.25:
-        return False
-
-    if not 0.00 <= des.max_camber <= 0.15:
-        return False
-
-    if not 0.15 <= des.max_thickness_loc <= 0.45:
-        return False
-
-    if not 0.30 <= des.max_camber_loc <= 0.70:
-        return False
-
+    p = 0.0
+    
+    # Geometric ordering constraints
     if des.max_thickness <= des.max_camber:
-        return False
-
+        p += 100 * (des.max_camber - des.max_thickness)
     if des.max_thickness < 1.5 * des.max_camber:
-        return False
-
+        p += 100 * (1.5 * des.max_camber - des.max_thickness)
     if des.max_thickness_loc >= des.max_camber_loc:
-        return False
-
-    return True
+        p += 100 * (des.max_thickness_loc - des.max_camber_loc)
+    if not 0.06 <= des.max_thickness <= 0.25:
+        p += 10
+    if not 0.00 <= des.max_camber <= 0.15:
+        p += 10
+    if not 0.15 <= des.max_thickness_loc <= 0.45:
+        p += 10
+    if not 0.30 <= des.max_camber_loc <= 0.70:
+        p += 10
+    
+    return p
 
 
 # -------------------------------------------------
@@ -58,7 +51,7 @@ def scoring_p1(aero_result, design):
     if not valid_aero(cl, cd):
         return INVALID_SCORE
 
-    if not valid_constraints(design):
+    if constraint_penalty(design) > 0:
         return INVALID_SCORE
 
     cd_weight = TRACK_WEIGHTS["straights"]
