@@ -2,9 +2,12 @@ import numpy as np
 
 from setup.aero_interface import run_mses
 from setup.design_vars import designParameters
+from setup.geometry import load_airfoil_dat
+
+from log import initialize_log, log_iteration
+from plotting import plot_seed_vs_optimized, plot_aero_history, plot_score_history
 
 from bayesian_optimization.bayesian_optimizer import bayesian_loop
-
 
 def design_from_x(x):
     """Convert BO's optimization vector to design parameters."""
@@ -58,7 +61,6 @@ def generate_training_data(seed_design, bounds_arr, training_n, scoring_fn,
         y_list.append(scoring_fn(aero, design))
     print(len(y_list), "training scores generated")
 
-
     return np.array(X_list), np.array(y_list)
 
 
@@ -73,6 +75,21 @@ def run_bo_optimizer(config):
     reynolds = config["reynolds"]
     constraints = config["constraints"]
     training_n = config["training_n"]
+
+    plotting = config["plotting"]
+    logging = config["logging"]
+    phase_name = config["phase_name"]
+
+    # Setup logging
+    if logging:
+        log_file = f"bo_log_{phase_name.replace(' ', '_')}.csv"
+        initialize_log(log_file)
+        
+        # Mutable counter so we can update from inside the closure
+        iter_counter = {"n": 0}
+        
+        # Track the best result for plotting
+        best_tracker = {"coords": None, "score": float("-inf")}
 
     # Load bounds first (needed for both initial training and BO)
     bounds_arr = np.genfromtxt(
@@ -99,6 +116,19 @@ def run_bo_optimizer(config):
         constraints=constraints,
     )
 
+    # Run MSES on seed at the start
+    print("Obtaining seed's coordinated before beginning optimization...")
+    seed_aero = run_mses(
+        design=seed_design,
+        name="seed_baseline",
+        alpha=alpha, mach=mach, reynolds=reynolds,
+        seed_airfoil=seed_airfoil,
+    )
+    seed_coords = seed_aero.coords
+    
+    # Store the best coords as BO progresses
+    best_tracker = {"coords": None, "score": float("-inf")}
+
     # Objective for BO to call each iteration
     def objective_fn(x):
         design = design_from_x(x)
@@ -112,7 +142,19 @@ def run_bo_optimizer(config):
             plot_geometry=False,
             plot_comparison=False,
         )
-        return scoring_fn(aero_result, design)
+        score = scoring_fn(aero_result, design)
+
+        # Track best result for plotting later
+        if score > best_tracker["score"]:
+            best_tracker["score"] = score
+            best_tracker["coords"] = aero_result.coords
+
+        # Log this evaluation
+        log_iteration(log_file, iter_counter["n"], 
+            aero_result.cl,aero_result.cd,score,)
+        iter_counter["n"] += 1
+
+        return score
 
     # Run BO
     print("-----------------------------------")
@@ -138,5 +180,22 @@ def run_bo_optimizer(config):
     print(f"  max_camber_loc:     {best_design.max_camber_loc:.4f}")
     print(f"  max_thickness:      {best_design.max_thickness:.4f}")
     print(f"  max_thickness_loc:  {best_design.max_thickness_loc:.4f}")
+
+    # Plot
+    if config["plotting"]:
+        # Load seed coords from the .txt file
+        seed_x, seed_y = load_airfoil_dat(str(seed_airfoil))
+        seed_coords = np.column_stack([seed_x, seed_y])
+        
+        # Plot seed vs optimized
+        plot_seed_vs_optimized(
+            seed_coords=seed_coords,
+            optimized_coords=best_tracker["coords"],
+            phase_name=phase_name,
+        )
+    if config["logging"]:
+        # Plot the score/aero history if logging is enabled
+        plot_score_history(log_file, phase_name=phase_name)
+        plot_aero_history(log_file, phase_name=phase_name)
 
     return X, y, x_best, y_best
