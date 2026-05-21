@@ -3,6 +3,7 @@ import numpy as np
 from setup.aero_interface import run_mses
 from setup.design_vars import designParameters
 from setup.geometry import load_airfoil_dat
+from setup.scoring import scoring_p1
 
 from log import initialize_log, log_iteration
 from plotting import plot_seed_vs_optimized, plot_aero_history, plot_score_history
@@ -33,24 +34,11 @@ def generate_training_data(seed_design, bounds_arr, training_n, scoring_fn,
     """
     Build initial training data: the seed design + (training_n - 1) random points.
     """
+
+    # Seed airfoil + initializing the vectors of scores and designs
     X_list = [x_from_design(seed_design)]
-
-    # Random perturbations of the seed
-    rng = np.random.default_rng(42)
-    while len(X_list) < training_n:
-        x = rng.uniform(bounds_arr[:, 0], bounds_arr[:, 1])
-        if constraints(x):      
-            X_list.append(x)
-            print("Appended training airfoil")
-    print(len(X_list), "training airfoils generated")
-        
-    # Evaluate all of them
-    print(len(X_list), "evaluating training airfoils...")
-
-    y_list = []
-    for x in X_list:
-        design = design_from_x(x)
-        aero = run_mses(
+    design = design_from_x(X_list[0])
+    aero = run_mses(
             design=design,
             name="init",
             alpha=alpha,
@@ -58,7 +46,29 @@ def generate_training_data(seed_design, bounds_arr, training_n, scoring_fn,
             reynolds=reynolds,
             seed_airfoil=seed_airfoil,
         )
-        y_list.append(scoring_fn(aero, design))
+    y_list = [scoring_fn(aero, design)]
+    print(y_list)
+
+    # Random perturbations of the seed
+    rng = np.random.default_rng(42)
+    while len(X_list) < training_n:
+        x = rng.uniform(bounds_arr[:, 0], bounds_arr[:, 1])
+        if constraints(x): 
+            design = design_from_x(x)
+            aero = run_mses(
+                design=design,
+                name="init",
+                alpha=alpha,
+                mach=mach,
+                reynolds=reynolds,
+                seed_airfoil=seed_airfoil,
+            )
+            score = scoring_fn(aero, design)
+            if score != -10:
+                X_list.append(x)
+                y_list.append(score)
+                print("Appended training airfoil")
+    print(len(X_list), "training airfoils generated")
     print(len(y_list), "training scores generated")
 
     return np.array(X_list), np.array(y_list)

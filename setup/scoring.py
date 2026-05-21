@@ -21,8 +21,8 @@ def scoring_p1(aero_result, design):
     cl = aero_result.cl
     cd = aero_result.cd
 
-    if not valid_aero(cl, cd):
-        return INVALID_SCORE
+    # if not valid_aero(cl, cd):
+    #     return INVALID_SCORE
 
     cd_weight = TRACK_WEIGHTS["straights"]
     cl_weight = TRACK_WEIGHTS["turns"]

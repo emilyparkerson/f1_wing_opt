@@ -7,6 +7,7 @@ def airfoil_constraints(x):
     # Unpack into named parameters
     max_camber, max_camber_loc, max_thickness, max_thickness_loc = x
     
+    
     # Geometric ordering constraints
     if max_thickness <= max_camber:
         return False
