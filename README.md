@@ -1,8 +1,14 @@
 # f1_wing_opt
 AA222 Final Project: F1 Multi-Element Rear Wing Optimization<<<<<<< pymead-setup
 
-# To-do
+# To-do 5/20
 
+1. inputs to MSES in config.py
+2. add the plotting function to optimization to visualize outputs
+3. figure out how to import a multi-element airfoil into MSES
+4. phase 3 scoring function
+
+#Past To-Dos (check these)
 clean up the plotting - can emily's method work for plotting the final stuff?
 
 What can we delete? combine? etc? plottying.py??????
