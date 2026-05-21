@@ -9,14 +9,17 @@ from setup.design_vars import (
     airfoilBounds
 )
 
-HERE = Path(__file__).parent
+from setup.geometry import plot_airfoil
 
+HERE = Path(__file__).parent
 
 PHASE_CONFIG = {
 
     # Phase info
     "phase_name": "P1",
     "scoring_function": scoring_p1,
+    "plotting_function": plot_airfoil,
+    "plot_geometry": True,
 
     # Flow conditions
     "alpha": 0.0,
@@ -54,4 +57,5 @@ PHASE_CONFIG = {
             "max_camber_loc": 0.02,
             "max_thickness": 0.005,
             "max_thickness_loc": 0.01}}
+
 }
