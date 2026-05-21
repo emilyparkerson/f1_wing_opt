@@ -10,7 +10,7 @@ def valid_aero(cl, cd):
     return True
 
 #phase 1 scoring function
-def scoring_p1(aero_result, design):
+def scoring_p1(aero_result, ref_vals):
 
     cl = aero_result.cl
     cd = aero_result.cd
@@ -29,8 +29,8 @@ def scoring_p1(aero_result, design):
         return INVALID_SCORE
 
     #normalize with respect to seed
-    df_n = df / REF_VALS["df_p1"]
-    cd_n = cd / REF_VALS["cd_p1"]
+    df_n = df / ref_vals["df"]
+    cd_n = cd / ref_vals["cd"]
 
     #maximize downforce, penalize drag
     score = df_n * cl_weight - cd_n * cd_weight
@@ -38,7 +38,7 @@ def scoring_p1(aero_result, design):
     return score
 
 #phase 2 scoring function
-def scoring_p2(aero_result, design):
+def scoring_p2(aero_result, ref_vals):
 
     cl = aero_result.cl
     cd = aero_result.cd
@@ -57,15 +57,15 @@ def scoring_p2(aero_result, design):
         return INVALID_SCORE
     
     #normalize with respect to seed
-    df_n = df / REF_VALS["df_p2"]
-    cd_n = cd / REF_VALS["cd_p2"]
+    df_n = df / ref_vals["df"]
+    cd_n = cd / ref_vals["cd"]
 
     #maximize downforce, penalize drag
     score = df_n * cl_weight - cd_n * cd_weight
 
     return score
 
-def scoring_p3(aero_result, aoa_deg):
+def scoring_p3(aero_result, aoa_deg, ref_vals):
     cl = aero_result.cl
     cd = aero_result.cd
 
@@ -87,8 +87,8 @@ def scoring_p3(aero_result, aoa_deg):
         return INVALID_SCORE
     
     #normalize with respect to seed
-    df_n = df / REF_VALS["df_p3"]
-    cd_n = cd / REF_VALS["cd_p3"]
+    df_n = df / ref_vals["df"]
+    cd_n = cd / ref_vals["cd"]
 
     #maximize downforce, penalize drag
     score = df_n * cl_weight - cd_n * cd_weight

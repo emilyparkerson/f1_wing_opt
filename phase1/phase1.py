@@ -44,6 +44,12 @@ P1_IB_CONFIG = {
         max_thickness_loc=(0.15, 0.45)),
     "constraints": airfoil_constraints,
 
+    #Reference values
+    "ref_vals": {
+        "df": 1.08588,
+        "cd": 0.0145
+    },
+
     # Bayesian optimization settings
     "bo": {"training_csv": HERE / "training_data_p1.csv",
         "bounds_csv": HERE / "design_variable_bounds_p1.csv",
@@ -90,6 +96,12 @@ P1_OB_CONFIG = {
         max_thickness=(0.06, 0.25),
         max_thickness_loc=(0.15, 0.45)),
     "constraints": airfoil_constraints,
+
+    #Reference values
+    "ref_vals": {
+        "df": 1.08588,
+        "cd": 0.0145
+    },
 
     # Bayesian optimization settings
     "bo": {"training_csv": HERE / "training_data_p1.csv",
