@@ -1,5 +1,7 @@
 # Final Project Plan
 
+
+
 ## Timeline
 
 **May 10/2:** Bayesian working on some objective function (Mariah)
