@@ -30,7 +30,7 @@ def x_from_design(design):
 
 
 def generate_training_data(seed_design, bounds_arr, training_n, scoring_fn,
-                           alpha, mach, reynolds, seed_airfoil, constraints):
+                           alpha, mach, reynolds, seed_airfoil, constraints, ref_vals):
     """
     Build initial training data: the seed design + (training_n - 1) random points.
     """
@@ -46,7 +46,7 @@ def generate_training_data(seed_design, bounds_arr, training_n, scoring_fn,
             reynolds=reynolds,
             seed_airfoil=seed_airfoil,
         )
-    y_list = [scoring_fn(aero, design)]
+    y_list = [scoring_fn(aero, ref_vals)]
     print(y_list)
 
     # Random perturbations of the seed
@@ -63,11 +63,11 @@ def generate_training_data(seed_design, bounds_arr, training_n, scoring_fn,
                 reynolds=reynolds,
                 seed_airfoil=seed_airfoil,
             )
-            score = scoring_fn(aero, design)
-            if score != -10:
+            score = scoring_fn(aero, ref_vals)
+            if score != -1:
                 X_list.append(x)
                 y_list.append(score)
-                print("Appended training airfoil")
+                print(f"Appended training airfoil {len(X_list)}")
     print(len(X_list), "training airfoils generated")
     print(len(y_list), "training scores generated")
 
@@ -85,6 +85,7 @@ def run_bo_optimizer(config):
     reynolds = config["reynolds"]
     constraints = config["constraints"]
     training_n = config["training_n"]
+    ref_vals = config["ref_vals"]
 
     plotting = config["plotting"]
     logging = config["logging"]
@@ -124,10 +125,11 @@ def run_bo_optimizer(config):
         reynolds=reynolds,
         seed_airfoil=seed_airfoil,
         constraints=constraints,
+        ref_vals=ref_vals
     )
 
     # Run MSES on seed at the start
-    print("Obtaining seed's coordinated before beginning optimization...")
+    print("Obtaining seed's coordinates before beginning optimization...")
     seed_aero = run_mses(
         design=seed_design,
         name="seed_baseline",
@@ -152,7 +154,7 @@ def run_bo_optimizer(config):
             plot_geometry=False,
             plot_comparison=False,
         )
-        score = scoring_fn(aero_result, design)
+        score = scoring_fn(aero_result, ref_vals)
 
         # Track best result for plotting later
         if score > best_tracker["score"]:

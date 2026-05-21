@@ -26,7 +26,7 @@ P1_IB_CONFIG = {
     "reynolds": 1e6,
 
     # Training data
-    "training_n":10,
+    "training_n":8,
 
     # Initial design (for MSES, training data is used for BO)
     "seed_airfoil": HERE / "inboard_seed_phase1.txt",
@@ -38,7 +38,7 @@ P1_IB_CONFIG = {
 
     # Design variable bounds
     "bounds": airfoilBounds(
-        max_camber=(0.00, 0.15),
+        max_camber=(0.00, 0.1),
         max_camber_loc=(0.30, 0.70),
         max_thickness=(0.06, 0.25),
         max_thickness_loc=(0.15, 0.45)),
@@ -56,7 +56,7 @@ P1_IB_CONFIG = {
         "max_iter": 25},
 
     # Random/local search settings
-    "random_search": {"n_iterations": 25,
+    "random_search": {"n_iterations": 10,
         "step_size": {
             "max_camber": 0.003,
             "max_camber_loc": 0.02,

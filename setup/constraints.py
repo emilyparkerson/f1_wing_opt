@@ -11,8 +11,8 @@ def airfoil_constraints(x):
     # Geometric ordering constraints
     if max_thickness <= max_camber:
         return False
-    if max_thickness < 1.5 * max_camber:
-        return False
+    #if max_thickness < 1.5 * max_camber:
+        #return False
     if max_thickness_loc >= max_camber_loc:
         return False
     

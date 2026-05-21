@@ -29,7 +29,7 @@ REF_VALS = {
 }
 
 #invalid score for BAD designs (large negative number so that design is not chosen)
-INVALID_SCORE = -10
+#INVALID_SCORE = -1
 
 #path to seed file
 PHASE1_SEED_PATH = r"C:\Users\ecpar\Downloads\inboard_seed_phase1.txt"
