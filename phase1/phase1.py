@@ -7,7 +7,7 @@ from setup.design_vars import (
     airfoilBounds
 )
 
-HERE = Path(__file__).parent
+from setup.geometry import plot_airfoil
 
 P1_IB_CONFIG = {
 
