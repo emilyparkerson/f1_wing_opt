@@ -9,6 +9,8 @@ from setup.design_vars import (
 
 from setup.geometry import plot_airfoil
 
+HERE = Path(__file__).parent
+
 P1_IB_CONFIG = {
 
     # Phase info
