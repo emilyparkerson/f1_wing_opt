@@ -10,7 +10,7 @@ def valid_aero(cl, cd):
     return True
 
 #phase 1 scoring function
-def scoring_p1(aero_result):
+def scoring_p1(aero_result, design):
 
     cl = aero_result.cl
     cd = aero_result.cd
@@ -38,7 +38,7 @@ def scoring_p1(aero_result):
     return score
 
 #phase 2 scoring function
-def scoring_p2(aero_result):
+def scoring_p2(aero_result, design):
 
     cl = aero_result.cl
     cd = aero_result.cd
