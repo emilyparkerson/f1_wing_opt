@@ -1,0 +1,26 @@
+
+PLOP
+G F
+
+LOAD C:/Users/ecpar/OneDrive/Documents/Stanford - AeroAstro/AA 222/f1_wing_opt/test_airfoil_temp.dat
+test_airfoil
+PANE
+
+OPER
+VISC 1000000
+MACH 0.2300
+ITER 200
+
+VPAR
+N 9.0
+XTR 0.1 0.1
+
+
+PACC
+C:/Users/ecpar/OneDrive/Documents/Stanford - AeroAstro/AA 222/f1_wing_opt/xfoil_polar.txt
+
+ALFA -2.0000
+
+PACC
+
+QUIT

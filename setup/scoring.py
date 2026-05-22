@@ -33,11 +33,23 @@ def scoring_p1(aero_result, ref_vals):
         cd_n = cd / ref_vals["cd"]
 
         #maximize downforce, penalize drag
-        score = df_n * cl_weight - cd_n * cd_weight
-        score = df_n * 1.0 - cd_n * 0
+        score = 100 * (df_n * cl_weight - cd_n * cd_weight)
 
     else:
         score = -1
+
+        # geometry sanity penalties
+    if aero_result.coords is not None:
+        y = aero_result.coords[:, 1]
+        thickness_est = y.max() - y.min()
+
+        # penalize very thick/extreme shapes
+        if thickness_est > 0.20:
+            score -= 2.0 * (thickness_est - 0.20)
+
+        # penalize very large vertical excursions
+        if abs(y.min()) > 0.18:
+            score -= 2.0 * (abs(y.min()) - 0.18)
 
     return score
 
