@@ -1,23 +1,34 @@
 # f1_wing_opt
 AA222 Final Project: F1 Multi-Element Rear Wing Optimization<<<<<<< pymead-setup
 
-# To-do 5/20
+# To-do
 
-1. inputs to MSES in config.py
-2. add the plotting function to optimization to visualize outputs
-3. figure out how to import a multi-element airfoil into MSES
-4. phase 3 scoring function
+1. In-board and out-board phase 1 geometry (Anthony -- paste plots into report)
+a. Plots for each airfoil geometry (seed with new airfoil overlayed)
+b. Plots for scoring function for each
+c. Plots for drag coefficient and lift coefficient for each
 
-#Past To-Dos (check these)
-clean up the plotting - can emily's method work for plotting the final stuff?
+2. In-board and out-board phase 2 geoemetry (only change config and run with single element)
+(Mariah -- work on getting intial conditions for phase 2), (Anthony -- get plots same as phase 1, paste plots in report) 
+a. Plots for each airfoil geometry (seed with new airfoil overlayed)
+b. Plots for scoring function for each
+c. Plots for drag coefficient and lift coefficient for each
 
-What can we delete? combine? etc? plottying.py??????
+3. Get results from Pymead optimization for Phase 1 to validate our results (just give Pymead seed airfoil and compare results)
+(Emily)
+a. Plot comparison between our optimized airfoil and Pymead's
+b. Run multiple trials (maybe 5)
+i. compare scores between methods
+ii. compare robustness and convergence between methods
 
-put stuff in folders
+4. If time permits (probably not)...interface BO optimizer with phase 3 geometry for inboard and outboard
+a. Plots for each airfoil showing seed airfoil with new rotated airfoil overlayed
+b. Plots for scoring function for each
+c. Plots for drag coefficient and lift coefficient for each
 
-delete generate_airfoil
-
-fix the constraints and bounds such that it only runs valid geometries and they are solved correctly
+For report: (Emily - reorganize report and assign sections)
+add section comparing results from Pymead to our own (put in discussion)
+add section comparing our fixed airfoils to common high-lift, low Re airfoils (put in discussion)
 
 # Install pymead
 In powershell, run the following:
