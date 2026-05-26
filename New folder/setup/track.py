@@ -1,0 +1,50 @@
+#create dictionary for track weights
+
+#for both straights and turns: for Monaco prioritze downforce
+#more than penalizing drag
+PHASE1_WEIGHTS = {
+    "downforce": 0.53,
+    "drag": 0.47 
+}
+
+#for turns: prioritize downforce, lightly peanlize drag
+PHASE2_WEIGHTS = {
+    "downforce": 0.65,
+    "drag": 0.35 
+}
+
+#for straights: penalize drag heavily
+PHASE3_WEIGHTS = {
+    "downforce": 0.35,
+    "drag": 0.65 
+}
+#create dictionary from seed airfoil data (df = -cl)
+REF_VALS = {
+    "df_p1": 1.08588,
+    "cd_p1": 0.0145,
+    "df_p2": 1.2,
+    "cd_p2": 0.4,
+    "df_p3": 0,
+    "cd_p3": 0
+}
+
+#invalid score for BAD designs (large negative number so that design is not chosen)
+#INVALID_SCORE = -1
+
+#path to seed file
+PHASE1_SEED_PATH = r"C:\Users\ecpar\Downloads\inboard_seed_phase1.txt"
+PHASE2_SEED_PATH = r"C:\Users\ecpar\Downloads\inboard_seed_phase2.txt"
+
+#design constraints
+PHASE1_BOUNDS = {
+    "max_camber": (0.02, 0.20),
+    "max_camber_loc": (0.30, 0.65),
+    "max_thickness": (0.06, 0.18),
+    "max_thickness_loc": (0.20, 0.45),
+}
+
+#second element leading edge position relative to first element trailing edge
+SECOND_ELM_LOC = {
+    "horizontal": 0.90,
+    "vertical": 0.20
+}

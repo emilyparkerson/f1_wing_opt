@@ -1,5 +1,6 @@
 from setup.track import PHASE1_WEIGHTS, PHASE2_WEIGHTS, PHASE3_WEIGHTS #INVALID_SCORE
 
+
 #check if valid aero results are returned
 def valid_aero(cl, cd):
     if cl is None or cd is None:
@@ -20,6 +21,7 @@ def scoring_p1(aero_result, ref_vals):
         cl_weight = PHASE1_WEIGHTS["downforce"]
 
         #rear wing downforce
+        print(cl)
         df = -cl
 
         #heavily penalize positive lift
