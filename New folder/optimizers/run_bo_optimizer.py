@@ -1,3 +1,5 @@
+
+
 import numpy as np
 
 from setup.aero_interface import run_mses
@@ -46,8 +48,9 @@ def generate_training_data(seed_design, bounds_arr, training_n, scoring_fn,
             reynolds=reynolds,
             seed_airfoil=seed_airfoil,
         )
+    
     y_list = [scoring_fn(aero, ref_vals)]
-    print(y_list)
+    print(f"Added seed airfoil to training set")
 
     # Random perturbations of the seed
     rng = np.random.default_rng(42)
@@ -55,6 +58,7 @@ def generate_training_data(seed_design, bounds_arr, training_n, scoring_fn,
         x = rng.uniform(bounds_arr[:, 0], bounds_arr[:, 1])
         if constraints(x): 
             design = design_from_x(x)
+            print("----------------------------------------")
             aero = run_mses(
                 design=design,
                 name="init",
@@ -63,11 +67,14 @@ def generate_training_data(seed_design, bounds_arr, training_n, scoring_fn,
                 reynolds=reynolds,
                 seed_airfoil=seed_airfoil,
             )
+
             score = scoring_fn(aero, ref_vals)
             if score != -1:
                 X_list.append(x)
                 y_list.append(score)
                 print(f"Appended training airfoil {len(X_list)}")
+                print("----------------------------------------")
+
     print(len(X_list), "training airfoils generated")
     print(len(y_list), "training scores generated")
 
@@ -133,7 +140,8 @@ def run_bo_optimizer(config):
     seed_aero = run_mses(
         design=seed_design,
         name="seed_baseline",
-        alpha=alpha, mach=mach, 
+        alpha=alpha, 
+        mach=mach, 
         reynolds=reynolds,
         seed_airfoil=seed_airfoil,
     )
@@ -151,10 +159,11 @@ def run_bo_optimizer(config):
             alpha=alpha,
             mach=mach,
             reynolds=reynolds,
-            seed_airfoil=seed_airfoil,
             plot_geometry=False,
             plot_comparison=False,
+            seed_airfoil=seed_airfoil,
         )
+
         score = scoring_fn(aero_result, ref_vals)
 
         # Track best result for plotting later
