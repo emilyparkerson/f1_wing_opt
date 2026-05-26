@@ -50,7 +50,6 @@ def scoring_p2(aero_result, ref_vals):
         cl_weight = PHASE2_WEIGHTS["downforce"]
 
         #rear wing downforce
-        print(cl)
         df = -cl
 
         #heavily penalize positive lift
