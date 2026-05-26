@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 from setup.aero_interface import run_mses
 from setup.design_vars import designParameters
@@ -27,6 +28,26 @@ def x_from_design(design):
 
 
 # -------------------------------------------------
+# FRONT THICKNESS CHECK
+# -------------------------------------------------
+
+def thickness_at_x(coords, x_check=0.05):
+
+    le_idx = np.argmin(coords[:, 0])
+
+    upper = coords[:le_idx + 1]
+    lower = coords[le_idx:]
+
+    upper = upper[np.argsort(upper[:, 0])]
+    lower = lower[np.argsort(lower[:, 0])]
+
+    yu = np.interp(x_check, upper[:, 0], upper[:, 1])
+    yl = np.interp(x_check, lower[:, 0], lower[:, 1])
+
+    return yu - yl
+
+
+# -------------------------------------------------
 # VALIDITY CHECK
 # -------------------------------------------------
 
@@ -46,6 +67,15 @@ def is_valid_result(aero):
 
     # reject absurd lift values
     if abs(aero.cl) > 1.4:
+        return False
+
+    # enforce minimum front thickness
+    front_thickness = thickness_at_x(
+        aero.coords,
+        x_check=0.05
+    )
+
+    if front_thickness < 0.055:
         return False
 
     return True
@@ -240,7 +270,6 @@ def run_bo_optimizer(config):
     print(f"  max_thickness:      {best_design.max_thickness:.4f}")
     print(f"  max_thickness_loc:  {best_design.max_thickness_loc:.4f}")
 
-    import matplotlib.pyplot as plt
     # -----------------------------------
     # PLOT BEST AIRFOIL VS SEED
     # -----------------------------------

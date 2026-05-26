@@ -48,7 +48,7 @@ PHASE_CONFIG = {
     "bounds": airfoilBounds(
         max_camber=(0.00, 0.08),
         max_camber_loc=(0.30, 0.70),
-        max_thickness=(0.06, 0.225),
+        max_thickness=(0.17, 0.225),
         max_thickness_loc=(0.15, 0.3)),
     "constraints": airfoil_constraints,
 

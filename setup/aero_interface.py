@@ -30,9 +30,9 @@ from setup.geometry import (
 def run_mses(
         design,
         name="candidate_airfoil",
-        alpha=-2.0,
-        mach=0.2,
-        reynolds=1e6,
+        alpha=0.0,
+        mach=0.081627322,
+        reynolds=789563.2304,
         plot_geometry=False,
         plot_comparison=False,
         seed_airfoil=''):
@@ -142,7 +142,7 @@ def run_mses(
     mset_settings = MSETSettings(
         multi_airfoil_grid={"Airfoil-1": 
             AirfoilMSETMeshingParameters()},
-        airfoil_side_points=180
+        airfoil_side_points=240
     )
 
     mses_settings = MSESSettings(
@@ -155,12 +155,25 @@ def run_mses(
         Re=reynolds,
         alfa=alpha,
         alfa_Cl_mode=0,
-        timeout=300.0
+        timeout=800.0
     )
 
-    mplot_settings = MPLOTSettings(
-        Tecplot=True
-    )
+    # pymead 2.0.0b13 bug workaround
+    # MPLOTSettings uses "streamline_grid"
+    # but pymead internally expects "Streamline_Grid"
+
+    mplot_settings = {
+        "timeout":         15.0,
+        "grid_stats":      False,
+        "Mach":            False,
+        "Streamline_Grid": False,
+        "Grid":            False,
+        "Grid_Zoom":       False,
+        "flow_field":      False,
+        "Tecplot":         False,
+        "Paraview":        False,
+        "CPK":             False,
+    }
 
     # -------------------------------------------------
     # RUN MSES
