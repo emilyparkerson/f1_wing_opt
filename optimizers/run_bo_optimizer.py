@@ -47,7 +47,8 @@ def generate_training_data(seed_design, bounds_arr, training_n, scoring_fn,
             seed_airfoil=seed_airfoil,
         )
     y_list = [scoring_fn(aero, ref_vals)]
-    print(y_list)
+    print(f"Added seed airfoil to training set")
+
 
     # Random perturbations of the seed
     rng = np.random.default_rng(42)
