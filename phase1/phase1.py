@@ -25,8 +25,8 @@ PHASE_CONFIG = {
 
     # Flow conditions
     "alpha": 0.0,
-    "mach": 0.081627322,
-    "reynolds": 789563.2304,
+    "mach": 0.122440983,
+    "reynolds": 1184344.846,
 
     # Training data
     "training_n":10,
@@ -47,9 +47,9 @@ PHASE_CONFIG = {
 
     # Design variable bounds
     "bounds": airfoilBounds(
-        max_camber=(0.00, 0.08),
+        max_camber=(0.00, 0.15),
         max_camber_loc=(0.30, 0.70),
-        max_thickness=(0.12, 0.22),
+        max_thickness=(0.14, 0.22),
         max_thickness_loc=(0.15, 0.35)),
     "constraints": airfoil_constraints,
 
