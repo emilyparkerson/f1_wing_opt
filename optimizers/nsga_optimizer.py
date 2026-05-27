@@ -57,17 +57,15 @@ class NSGAProblem(ElementwiseProblem):
 
     #core objective function (inspiration from chromosome.forces)
     #pymoo requires this function name
-    def _evaluate(self, x, out, __for_comp, __for_comp2):
+    def _evaluate(self, x, out, *args, **kwargs):
         self.eval_count += 1
 
-        #estimate generation and candidate number each evaluation belongs to (for organization to print progress)
-        pop_size = self.config.get("nsga", {}).get("population_size", 20)
-        generation = int(np.ceil(self.eval_count / pop_size))
-        candidate = ((self.eval_count - 1) % pop_size) + 1
+        #evaluation number (for organization to print progress)
+        candidate = self.eval_count
 
-        #print generation number, candidate number, and evaluation number
+        #print evaluation number
         print("-----------------------------------")
-        print(f"NSGA Generation {generation} | Candidate {candidate} | Eval {self.eval_count}")
+        print(f"Eval {self.eval_count}")
         print("-----------------------------------")
         print(f"x = [{x[0]:.4f}, {x[1]:.4f}, {x[2]:.4f}, {x[3]:.4f}]")
 
@@ -148,7 +146,7 @@ def plot_history(history):
     plt.show()
 
     #plot cd
-    plt.figure(figsize=(8, 4))
+    plt.figure()
     plt.plot(evals, history["cd"], marker="o")
     plt.xlabel("Valid NSGA Iteration")
     plt.ylabel("Cd")
@@ -167,7 +165,6 @@ def plot_seed_vs_optimized(seed_result, best_result):
         linewidth=2,
     )
 
-    plt.figure()
     plt.plot(
         best_result.coords[:, 0],
         best_result.coords[:, 1],
