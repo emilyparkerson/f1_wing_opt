@@ -30,9 +30,15 @@ from setup.geometry import (
 def run_mses(
         design,
         name="candidate_airfoil",
-        alpha=0.0,
-        mach=0.081627322,
-        reynolds=789563.2304,
+        # alpha=0.0,
+        # mach=0.061220492,
+        # reynolds=592172.4228,
+        #alpha=-2.0,
+        #mach=0.081627322,
+        #reynolds=789563.2304,
+        alpha=-2.5,
+        mach=0.093871421,
+        reynolds=907997.7149,
         plot_geometry=False,
         plot_comparison=False,
         seed_airfoil=''):
