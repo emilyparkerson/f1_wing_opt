@@ -49,14 +49,14 @@ PHASE_CONFIG = {
     "bounds": airfoilBounds(
         max_camber=(0.00, 0.08),
         max_camber_loc=(0.30, 0.70),
-        max_thickness=(0.14, 0.225),
-        max_thickness_loc=(0.15, 0.3)),
+        max_thickness=(0.12, 0.22),
+        max_thickness_loc=(0.15, 0.35)),
     "constraints": airfoil_constraints,
 
     # Bayesian optimization settings
     "bo": {"training_csv": HERE / "training_data_p1.csv",
         "bounds_csv": HERE / "design_variable_bounds_p1.csv",
-        "max_iter": 10},
+        "max_iter": 50},
 
     # Random/local search settings
     "random_search": {"n_iterations": 25,

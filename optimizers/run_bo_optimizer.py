@@ -65,18 +65,14 @@ def is_valid_result(aero):
     if aero.cd <= 0:
         return False
 
-    # reject absurd lift values
-    #if abs(aero.cl) > 1.4:
-    #    return False
-
     # enforce minimum front thickness
     front_thickness = thickness_at_x(
-        aero.coords,
-        x_check=0.05
+       aero.coords,
+       x_check=0.05
     )
 
     if front_thickness < 0.055:
-        return False
+       return False
 
     return True
 
@@ -181,6 +177,15 @@ def run_bo_optimizer(config):
 
     bounds_arr = np.array(bounds, dtype=float)
 
+    # -------------------------------------------------
+    # HISTORY STORAGE
+    # -------------------------------------------------
+
+    score_history = []
+    cl_history = []
+    cd_history = []
+    coords_history = []
+
     print("-----------------------------------")
     print("Building initial training data...")
     print("-----------------------------------")
@@ -236,7 +241,15 @@ def run_bo_optimizer(config):
         if not is_valid_result(aero_result):
             return None
 
-        return scoring_fn(aero_result, design)
+        score = scoring_fn(aero_result, design)
+
+        # save histories
+        score_history.append(score)
+        cl_history.append(aero_result.cl)
+        cd_history.append(aero_result.cd)
+        coords_history.append(aero_result.coords)
+
+        return score
 
     print("-----------------------------------")
     print("Running the Bayesian Optimization loop...")
@@ -270,9 +283,9 @@ def run_bo_optimizer(config):
     print(f"  max_thickness:      {best_design.max_thickness:.4f}")
     print(f"  max_thickness_loc:  {best_design.max_thickness_loc:.4f}")
 
-    # -----------------------------------
-    # PLOT BEST AIRFOIL VS SEED
-    # -----------------------------------
+    # -------------------------------------------------
+    # GET FINAL AIRFOILS
+    # -------------------------------------------------
 
     best_result = run_mses(
         design=best_design,
@@ -292,36 +305,165 @@ def run_bo_optimizer(config):
         seed_airfoil=seed_airfoil,
     )
 
+    # -------------------------------------------------
+    # SCORE HISTORY
+    # -------------------------------------------------
+
+    plt.figure(figsize=(8,4))
+
+    plt.plot(
+        score_history,
+        marker='o',
+        linewidth=2
+    )
+
+    plt.xlabel("Valid BO Iteration")
+    plt.ylabel("Score")
+
+    plt.title("Bayesian Optimization Score History")
+
+    plt.grid(True)
+
+    plt.show()
+
+    # -------------------------------------------------
+    # BEST SCORE SO FAR
+    # -------------------------------------------------
+
+    best_so_far = np.maximum.accumulate(score_history)
+
+    plt.figure(figsize=(8,4))
+
+    plt.plot(
+        best_so_far,
+        marker='o',
+        linewidth=2
+    )
+
+    plt.xlabel("Valid BO Iteration")
+    plt.ylabel("Best Score So Far")
+
+    plt.title("Bayesian Optimization Convergence")
+
+    plt.grid(True)
+
+    plt.show()
+
+    # -------------------------------------------------
+    # CL HISTORY
+    # -------------------------------------------------
+
+    plt.figure(figsize=(8,4))
+
+    plt.plot(
+        cl_history,
+        marker='o',
+        linewidth=2
+    )
+
+    plt.xlabel("Valid BO Iteration")
+    plt.ylabel("Cl")
+
+    plt.title("Bayesian Optimization Cl History")
+
+    plt.grid(True)
+
+    plt.show()
+
+    # -------------------------------------------------
+    # CD HISTORY
+    # -------------------------------------------------
+
+    plt.figure(figsize=(8,4))
+
+    plt.plot(
+        cd_history,
+        marker='o',
+        linewidth=2
+    )
+
+    plt.xlabel("Valid BO Iteration")
+    plt.ylabel("Cd")
+
+    plt.title("Bayesian Optimization Cd History")
+
+    plt.grid(True)
+
+    plt.show()
+
+    # -------------------------------------------------
+    # CD VS CL
+    # -------------------------------------------------
+
+    plt.figure(figsize=(6,6))
+
+    plt.scatter(
+        cd_history,
+        cl_history,
+        s=80
+    )
+
+    plt.xlabel("Cd")
+    plt.ylabel("Cl")
+
+    plt.title("Design Space Exploration")
+
+    plt.grid(True)
+
+    plt.show()
+
+    # -------------------------------------------------
+    # AIRFOIL EVOLUTION
+    # -------------------------------------------------
+
     if is_valid_result(best_result) and is_valid_result(seed_result):
 
-        plt.figure(figsize=(10,4))
+        plt.figure(figsize=(12,5))
 
+        # plot all valid BO airfoils
+        for coords in coords_history:
+
+            plt.plot(
+                coords[:,0],
+                coords[:,1],
+                color='gray',
+                alpha=0.25,
+                linewidth=1
+            )
+
+        # seed airfoil
         plt.plot(
             seed_result.coords[:,0],
             seed_result.coords[:,1],
-            label="Seed Airfoil",
-            linewidth=2
+            color='blue',
+            linewidth=3,
+            label='Seed Airfoil'
         )
 
+        # optimized airfoil
         plt.plot(
             best_result.coords[:,0],
             best_result.coords[:,1],
-            label="Optimized Airfoil",
-            linewidth=2
+            color='red',
+            linewidth=3,
+            label='Optimized Airfoil'
         )
 
         plt.axis("equal")
-        plt.grid(True)
-        plt.legend()
 
         plt.xlabel("x/c")
         plt.ylabel("y/c")
 
-        plt.title("Seed vs Optimized Airfoil")
+        plt.title("Airfoil Geometry Evolution")
+
+        plt.grid(True)
+
+        plt.legend()
 
         plt.show()
 
     else:
+
         print("Could not plot airfoils because one did not converge.")
 
     return X, y, x_best, y_best
