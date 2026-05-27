@@ -66,8 +66,8 @@ def is_valid_result(aero):
         return False
 
     # reject absurd lift values
-    if abs(aero.cl) > 1.4:
-        return False
+    #if abs(aero.cl) > 1.4:
+    #    return False
 
     # enforce minimum front thickness
     front_thickness = thickness_at_x(

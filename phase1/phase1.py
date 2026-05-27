@@ -32,30 +32,31 @@ PHASE_CONFIG = {
     "training_n":10,
 
     # Initial design (for MSES, training data is used for BO)
-    "seed_airfoil": HERE / "inboard_seed_phase1.txt",
+    "seed_airfoil": HERE / "outboard_seed_phase1.txt",
     # "seed_design": designParameters(
-    #     max_camber=0.04358,
-    #     max_camber_loc=0.635,
-    #     max_thickness=0.17569,
-    #     max_thickness_loc=0.2434),
+    #     max_camber=0.02544,
+    #     max_camber_loc=0.6616,
+    #     max_thickness=0.1421,
+    #     max_thickness_loc=0.2919),
     "seed_design": designParameters(
-        max_camber=0.045,
-        max_camber_loc=0.45,
-        max_thickness=0.175,
-        max_thickness_loc=0.24),
+          max_camber=0.02544,
+          # can't go any higher for max camber location or seed diverges
+        max_camber_loc=0.65,
+        max_thickness=0.1421,
+        max_thickness_loc=0.2919),
 
     # Design variable bounds
     "bounds": airfoilBounds(
         max_camber=(0.00, 0.08),
         max_camber_loc=(0.30, 0.70),
-        max_thickness=(0.17, 0.225),
+        max_thickness=(0.14, 0.225),
         max_thickness_loc=(0.15, 0.3)),
     "constraints": airfoil_constraints,
 
     # Bayesian optimization settings
     "bo": {"training_csv": HERE / "training_data_p1.csv",
         "bounds_csv": HERE / "design_variable_bounds_p1.csv",
-        "max_iter": 5},
+        "max_iter": 10},
 
     # Random/local search settings
     "random_search": {"n_iterations": 25,

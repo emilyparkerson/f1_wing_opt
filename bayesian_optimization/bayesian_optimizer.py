@@ -50,6 +50,24 @@ def bayesian_loop(X0, y0, objective_fn, bounds, constraints, max_iter=20):
                 constraints=normalized_constraints(constraints, bounds_arr),
             )
 
+            # -------------------------------------------------
+            # Add random exploration perturbation
+            # -------------------------------------------------
+
+            noise = np.random.normal(
+                loc=0.0,
+                scale=0.05,
+                size=len(x_next_norm)
+            )
+
+            x_next_norm = x_next_norm + noise
+
+            x_next_norm = np.clip(
+                x_next_norm,
+                0.0,
+                1.0
+            )
+
             x_next = denormalize(x_next_norm, bounds_arr)
             y_next = objective_fn(x_next)
 
