@@ -1,14 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+#import pymoo objects
 from pymoo.core.problem import ElementwiseProblem
 from pymoo.algorithms.moo.nsga2 import NSGA2
-
-try:
-    from pymoo.termination import get_termination
-except ModuleNotFoundError:
-    from pymoo.factory import get_termination
-
+from pymoo.factory import get_termination
 from pymoo.optimize import minimize
 
 from setup.aero_interface import run_mses
@@ -16,7 +12,7 @@ from setup.design_vars import designParameters
 
 from optimizers.run_bo_optimizer import is_valid_result
 
-
+#convert optimizer variables into airfoil design object
 def design_from_x(x):
     return designParameters(
         max_camber=float(x[0]),
@@ -35,44 +31,57 @@ def x_from_design(design):
     ], dtype=float)
 
 
+#wrap airfoil optimization problem into a form pymoo can optmize
+#inspiration taken from PymeadGAProblem shape_optimization.py
+#pymoo evaluates one candidate at a time
 class NSGAProblem(ElementwiseProblem):
+    #initialize problem
+    #double underscores for python object constructor
     def __init__(self, config, bounds_arr, constraints, history):
+        #tells pymoo the structure of the problem
         super().__init__(
-            n_var=4,
-            n_obj=1,
-            n_constr=0,
-            xl=bounds_arr[:, 0],
-            xu=bounds_arr[:, 1],
+            n_var=4, #4 design vars
+            n_obj=1, #1 objective function
+            n_constr=0, #no formal pymoo constraints
+            xl=bounds_arr[:, 0], #lower bounds
+            xu=bounds_arr[:, 1], #upper bounds
         )
 
+        #store inputs
         self.config = config
         self.constraints = constraints
         self.history = history
 
+        #evluation counter
         self.eval_count = 0
-        self.generation_guess = 0
 
-    def _evaluate(self, x, out, *args, **kwargs):
+    #core objective function (inspiration from chromosome.forces)
+    #pymoo requires this function name
+    def _evaluate(self, x, out, __for_comp, __for_comp2):
         self.eval_count += 1
 
+        #estimate generation and candidate number each evaluation belongs to (for organization to print progress)
         pop_size = self.config.get("nsga", {}).get("population_size", 20)
         generation = int(np.ceil(self.eval_count / pop_size))
         candidate = ((self.eval_count - 1) % pop_size) + 1
 
+        #print generation number, candidate number, and evaluation number
         print("-----------------------------------")
         print(f"NSGA Generation {generation} | Candidate {candidate} | Eval {self.eval_count}")
         print("-----------------------------------")
-        print(
-            f"x = [{x[0]:.4f}, {x[1]:.4f}, {x[2]:.4f}, {x[3]:.4f}]"
-        )
+        print(f"x = [{x[0]:.4f}, {x[1]:.4f}, {x[2]:.4f}, {x[3]:.4f}]")
 
+        #rehect invalid candidate designs by assigning a large penalty value
+        #okay here unlike BO because no need for training
         if not self.constraints(x):
             print("Rejected by constraints")
             out["F"] = [1e6]
             return
 
+        #convert into design parameters object
         design = design_from_x(x)
 
+        #run MSES (same as BO optimizer)
         aero = run_mses(
             design=design,
             name=f"nsga_eval_{self.eval_count}",
@@ -84,24 +93,28 @@ class NSGAProblem(ElementwiseProblem):
             plot_comparison=False,
         )
 
+        #penalize invalid aero designs
         if not is_valid_result(aero):
             print("Invalid MSES result")
             out["F"] = [1e6]
             return
 
+        #compute score
         scoring_fn = self.config["scoring_function"]
         score = scoring_fn(aero, design)
 
+        #store history of cl, cd, and score for plotting
         self.history["x"].append(np.array(x, dtype=float))
         self.history["score"].append(score)
         self.history["cl"].append(aero.cl)
         self.history["cd"].append(aero.cd)
 
+        #print cl, cd, and score for each candidate
         print(f"Cl = {aero.cl:.5f}")
         print(f"Cd = {aero.cd:.5f}")
         print(f"Score = {score:.5f}")
 
-        # pymoo minimizes, so use negative score
+        #pymoo minimizes, so use negative score
         out["F"] = [-score]
 
 
@@ -114,36 +127,39 @@ def plot_history(history):
 
     best_so_far = np.maximum.accumulate(history["score"])
 
-    plt.figure(figsize=(8, 4))
+    #plot score
+    plt.figure()
     plt.plot(evals, history["score"], marker="o", label="Score")
     plt.plot(evals, best_so_far, linestyle="--", label="Best Score So Far")
-    plt.xlabel("Valid Evaluation")
+    plt.xlabel("Valid NSGA Iteration")
     plt.ylabel("Score")
-    plt.title("NSGA Score History")
+    plt.title("NSGA-II Optimizer Score History")
     plt.grid(True)
     plt.legend()
     plt.show()
 
-    plt.figure(figsize=(8, 4))
+    #plot cl
+    plt.figure()
     plt.plot(evals, history["cl"], marker="o")
-    plt.xlabel("Valid Evaluation")
+    plt.xlabel("Valid NSGA Iteration")
     plt.ylabel("Cl")
-    plt.title("NSGA Cl History")
+    plt.title("NSGA-II Optimizer Cl History")
     plt.grid(True)
     plt.show()
 
+    #plot cd
     plt.figure(figsize=(8, 4))
     plt.plot(evals, history["cd"], marker="o")
-    plt.xlabel("Valid Evaluation")
+    plt.xlabel("Valid NSGA Iteration")
     plt.ylabel("Cd")
-    plt.title("NSGA Cd History")
+    plt.title("NSGA-II Optimizer Cd History")
     plt.grid(True)
     plt.show()
 
 
 def plot_seed_vs_optimized(seed_result, best_result):
-    plt.figure(figsize=(10, 4))
 
+    plt.figure()
     plt.plot(
         seed_result.coords[:, 0],
         seed_result.coords[:, 1],
@@ -151,6 +167,7 @@ def plot_seed_vs_optimized(seed_result, best_result):
         linewidth=2,
     )
 
+    plt.figure()
     plt.plot(
         best_result.coords[:, 0],
         best_result.coords[:, 1],
@@ -166,13 +183,15 @@ def plot_seed_vs_optimized(seed_result, best_result):
     plt.title("Seed vs NSGA Optimized Airfoil")
     plt.show()
 
-
+#function to run NSGA optimization (take input from Phase 1 config file)
 def run_nsga_optimizer(config):
+    #get any specific nsga configs, if none use empty dictionary
     nsga_config = config.get("nsga", {})
 
+    #set default population size and number of generations
     population_size = nsga_config.get("population_size", 20)
     n_generations = nsga_config.get("n_generations", 5)
-    seed = nsga_config.get("seed", 42)
+    seed = nsga_config.get("seed", 2) #randomization parameter for algorithm
 
     seed_design = config["seed_design"]
     seed_airfoil = config["seed_airfoil"]
@@ -184,10 +203,12 @@ def run_nsga_optimizer(config):
         bounds_obj.max_thickness,
         bounds_obj.max_thickness_loc,
     ]
+    #convert bounds into numpy array, so that pymoo can use them
     bounds_arr = np.array(bounds, dtype=float)
 
     constraints = config["constraints"]
 
+    #create list to store all design variables from candidate
     history = {
         "x": [],
         "score": [],
@@ -195,6 +216,7 @@ def run_nsga_optimizer(config):
         "cd": [],
     }
 
+    #print optimizer settings
     print("-----------------------------------")
     print("Running NSGA optimization...")
     print("-----------------------------------")
@@ -202,6 +224,7 @@ def run_nsga_optimizer(config):
     print(f"Generations: {n_generations}")
     print(f"Expected evaluations: {population_size * n_generations}")
 
+    #create the problem optimziation object using inputs defined above
     problem = NSGAProblem(
         config=config,
         bounds_arr=bounds_arr,
@@ -209,11 +232,13 @@ def run_nsga_optimizer(config):
         history=history,
     )
 
+    #use NSGA-II algorithm from pymoo, avoid duplicate airfoils
     algorithm = NSGA2(
         pop_size=population_size,
         eliminate_duplicates=True,
     )
 
+    #tell pymoo to stop after specific number of generations
     termination = get_termination("n_gen", n_generations)
 
     res = minimize(
@@ -224,9 +249,11 @@ def run_nsga_optimizer(config):
         verbose=True,
     )
 
+    #if no scores, then all invalid iterations
     if len(history["score"]) == 0:
         raise RuntimeError("NSGA completed but produced no valid evaluations.")
 
+    #find index of highest score and stores best design
     best_idx = int(np.argmax(history["score"]))
     x_best = history["x"][best_idx]
     y_best = history["score"][best_idx]
