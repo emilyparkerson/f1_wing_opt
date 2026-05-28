@@ -31,8 +31,8 @@ def run_mses(
         design,
         name="candidate_airfoil",
         alpha=0.0,
-        mach=0.081627322,
-        reynolds=789563.2304,
+        mach=0.122440983,
+        reynolds=1184344.846,
         plot_geometry=False,
         plot_comparison=False,
         seed_airfoil=''):
