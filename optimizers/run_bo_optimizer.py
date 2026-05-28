@@ -65,14 +65,18 @@ def is_valid_result(aero):
     if aero.cd <= 0:
         return False
 
+    # reject absurd lift values
+    # if abs(aero.cl) > 1.4:
+    #     return False
+
     # enforce minimum front thickness
     front_thickness = thickness_at_x(
-       aero.coords,
-       x_check=0.05
+        aero.coords,
+        x_check=0.05
     )
 
     if front_thickness < 0.055:
-       return False
+        return False
 
     return True
 
@@ -185,6 +189,7 @@ def run_bo_optimizer(config):
     cl_history = []
     cd_history = []
     coords_history = []
+    design_history = []
 
     print("-----------------------------------")
     print("Building initial training data...")
@@ -245,9 +250,19 @@ def run_bo_optimizer(config):
 
         # save histories
         score_history.append(score)
+
         cl_history.append(aero_result.cl)
+
         cd_history.append(aero_result.cd)
+
         coords_history.append(aero_result.coords)
+
+        design_history.append([
+            design.max_camber,
+            design.max_camber_loc,
+            design.max_thickness,
+            design.max_thickness_loc,
+        ])
 
         return score
 
@@ -306,6 +321,40 @@ def run_bo_optimizer(config):
     )
 
     # -------------------------------------------------
+    # SAVE SEED AND OPTIMIZED AIRFOIL COORDINATES
+    # -------------------------------------------------
+
+    if is_valid_result(seed_result):
+
+        np.savetxt(
+            f"seed_airfoil_{config['phase_name']}.dat",
+            seed_result.coords,
+            header="x y",
+            comments="",
+            fmt="%.8f"
+        )
+
+        print(
+            f"Saved seed coordinates to "
+            f"seed_airfoil_{config['phase_name']}.dat"
+        )
+
+    if is_valid_result(best_result):
+
+        np.savetxt(
+            f"optimized_airfoil_{config['phase_name']}.dat",
+            best_result.coords,
+            header="x y",
+            comments="",
+            fmt="%.8f"
+        )
+
+        print(
+            f"Saved optimized coordinates to "
+            f"optimized_airfoil_{config['phase_name']}.dat"
+        )
+
+    # -------------------------------------------------
     # SCORE HISTORY
     # -------------------------------------------------
 
@@ -314,15 +363,23 @@ def run_bo_optimizer(config):
     plt.plot(
         score_history,
         marker='o',
-        linewidth=2
+        markersize=6,
+        linewidth=2,
     )
 
     plt.xlabel("Valid BO Iteration")
+
     plt.ylabel("Score")
 
-    plt.title("Bayesian Optimization Score History")
+    plt.title("Score History")
 
-    plt.grid(True)
+    plt.grid(
+        True,
+        linestyle='--',
+        alpha=0.5
+    )
+
+    plt.tight_layout()
 
     plt.show()
 
@@ -337,15 +394,23 @@ def run_bo_optimizer(config):
     plt.plot(
         best_so_far,
         marker='o',
-        linewidth=2
+        markersize=6,
+        linewidth=2,
     )
 
     plt.xlabel("Valid BO Iteration")
+
     plt.ylabel("Best Score So Far")
 
-    plt.title("Bayesian Optimization Convergence")
+    plt.title("BO Convergence")
 
-    plt.grid(True)
+    plt.grid(
+        True,
+        linestyle='--',
+        alpha=0.5
+    )
+
+    plt.tight_layout()
 
     plt.show()
 
@@ -358,15 +423,23 @@ def run_bo_optimizer(config):
     plt.plot(
         cl_history,
         marker='o',
-        linewidth=2
+        markersize=6,
+        linewidth=2,
     )
 
     plt.xlabel("Valid BO Iteration")
-    plt.ylabel("Cl")
 
-    plt.title("Bayesian Optimization Cl History")
+    plt.ylabel(r"$C_l$")
 
-    plt.grid(True)
+    plt.title(r"$C_l$ History")
+
+    plt.grid(
+        True,
+        linestyle='--',
+        alpha=0.5
+    )
+
+    plt.tight_layout()
 
     plt.show()
 
@@ -379,15 +452,23 @@ def run_bo_optimizer(config):
     plt.plot(
         cd_history,
         marker='o',
-        linewidth=2
+        markersize=6,
+        linewidth=2,
     )
 
     plt.xlabel("Valid BO Iteration")
-    plt.ylabel("Cd")
 
-    plt.title("Bayesian Optimization Cd History")
+    plt.ylabel(r"$C_d$")
 
-    plt.grid(True)
+    plt.title(r"$C_d$ History")
+
+    plt.grid(
+        True,
+        linestyle='--',
+        alpha=0.5
+    )
+
+    plt.tight_layout()
 
     plt.show()
 
@@ -400,15 +481,25 @@ def run_bo_optimizer(config):
     plt.scatter(
         cd_history,
         cl_history,
-        s=80
+        s=70,
+        alpha=0.8,
+        edgecolors='black',
+        linewidths=0.5,
     )
 
-    plt.xlabel("Cd")
-    plt.ylabel("Cl")
+    plt.xlabel(r"$C_d$")
+
+    plt.ylabel(r"$C_l$")
 
     plt.title("Design Space Exploration")
 
-    plt.grid(True)
+    plt.grid(
+        True,
+        linestyle='--',
+        alpha=0.5
+    )
+
+    plt.tight_layout()
 
     plt.show()
 
@@ -427,7 +518,7 @@ def run_bo_optimizer(config):
                 coords[:,0],
                 coords[:,1],
                 color='gray',
-                alpha=0.25,
+                alpha=0.15,
                 linewidth=1
             )
 
@@ -437,7 +528,7 @@ def run_bo_optimizer(config):
             seed_result.coords[:,1],
             color='blue',
             linewidth=3,
-            label='Seed Airfoil'
+            label='Seed'
         )
 
         # optimized airfoil
@@ -446,24 +537,82 @@ def run_bo_optimizer(config):
             best_result.coords[:,1],
             color='red',
             linewidth=3,
-            label='Optimized Airfoil'
+            label='Optimized'
         )
 
         plt.axis("equal")
 
-        plt.xlabel("x/c")
-        plt.ylabel("y/c")
+        plt.xlabel(r"$x/c$")
+
+        plt.ylabel(r"$y/c$")
 
         plt.title("Airfoil Geometry Evolution")
 
-        plt.grid(True)
+        plt.grid(
+            True,
+            linestyle='--',
+            alpha=0.5
+        )
 
         plt.legend()
+
+        plt.tight_layout()
 
         plt.show()
 
     else:
 
         print("Could not plot airfoils because one did not converge.")
+
+    # -------------------------------------------------
+    # SAVE HISTORY DATA
+    # -------------------------------------------------
+
+    best_so_far = np.maximum.accumulate(score_history)
+
+    history_data = np.column_stack([
+
+        np.arange(1, len(score_history)+1),
+
+        score_history,
+
+        best_so_far,
+
+        cl_history,
+
+        cd_history,
+
+        np.array(design_history)
+    ])
+
+    np.savetxt(
+
+        f"bo_history_{config['phase_name']}.csv",
+
+        history_data,
+
+        delimiter=",",
+
+        header=(
+            "iteration,"
+            "score,"
+            "best_score_so_far,"
+            "Cl,"
+            "Cd,"
+            "max_camber,"
+            "max_camber_loc,"
+            "max_thickness,"
+            "max_thickness_loc"
+        ),
+
+        comments="",
+
+        fmt="%.6f"
+    )
+
+    print(
+        f"\nSaved BO history to "
+        f"bo_history_{config['phase_name']}.csv"
+    )
 
     return X, y, x_best, y_best
