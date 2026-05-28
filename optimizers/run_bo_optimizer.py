@@ -64,14 +64,14 @@ def is_valid_result(aero):
 
     if aero.cd <= 0:
         return False
-    
+
     # reject absurd lift values
-    #if abs(aero.cl) > 1.4:
-    #    return False
+    # if abs(aero.cl) > 1.4:
+    #     return False
 
     # enforce minimum front thickness
     front_thickness = thickness_at_x(
-       aero.coords,
+        aero.coords,
         x_check=0.05
     )
 
@@ -363,15 +363,23 @@ def run_bo_optimizer(config):
     plt.plot(
         score_history,
         marker='o',
-        linewidth=2
+        markersize=6,
+        linewidth=2,
     )
 
     plt.xlabel("Valid BO Iteration")
+
     plt.ylabel("Score")
 
-    plt.title("Bayesian Optimization Score History")
+    plt.title("Score History")
 
-    plt.grid(True)
+    plt.grid(
+        True,
+        linestyle='--',
+        alpha=0.5
+    )
+
+    plt.tight_layout()
 
     plt.show()
 
@@ -386,15 +394,23 @@ def run_bo_optimizer(config):
     plt.plot(
         best_so_far,
         marker='o',
-        linewidth=2
+        markersize=6,
+        linewidth=2,
     )
 
     plt.xlabel("Valid BO Iteration")
+
     plt.ylabel("Best Score So Far")
 
-    plt.title("Bayesian Optimization Convergence")
+    plt.title("BO Convergence")
 
-    plt.grid(True)
+    plt.grid(
+        True,
+        linestyle='--',
+        alpha=0.5
+    )
+
+    plt.tight_layout()
 
     plt.show()
 
@@ -407,15 +423,23 @@ def run_bo_optimizer(config):
     plt.plot(
         cl_history,
         marker='o',
-        linewidth=2
+        markersize=6,
+        linewidth=2,
     )
 
     plt.xlabel("Valid BO Iteration")
-    plt.ylabel("Cl")
 
-    plt.title("Bayesian Optimization Cl History")
+    plt.ylabel(r"$C_l$")
 
-    plt.grid(True)
+    plt.title(r"$C_l$ History")
+
+    plt.grid(
+        True,
+        linestyle='--',
+        alpha=0.5
+    )
+
+    plt.tight_layout()
 
     plt.show()
 
@@ -428,15 +452,23 @@ def run_bo_optimizer(config):
     plt.plot(
         cd_history,
         marker='o',
-        linewidth=2
+        markersize=6,
+        linewidth=2,
     )
 
     plt.xlabel("Valid BO Iteration")
-    plt.ylabel("Cd")
 
-    plt.title("Bayesian Optimization Cd History")
+    plt.ylabel(r"$C_d$")
 
-    plt.grid(True)
+    plt.title(r"$C_d$ History")
+
+    plt.grid(
+        True,
+        linestyle='--',
+        alpha=0.5
+    )
+
+    plt.tight_layout()
 
     plt.show()
 
@@ -449,15 +481,25 @@ def run_bo_optimizer(config):
     plt.scatter(
         cd_history,
         cl_history,
-        s=80
+        s=70,
+        alpha=0.8,
+        edgecolors='black',
+        linewidths=0.5,
     )
 
-    plt.xlabel("Cd")
-    plt.ylabel("Cl")
+    plt.xlabel(r"$C_d$")
+
+    plt.ylabel(r"$C_l$")
 
     plt.title("Design Space Exploration")
 
-    plt.grid(True)
+    plt.grid(
+        True,
+        linestyle='--',
+        alpha=0.5
+    )
+
+    plt.tight_layout()
 
     plt.show()
 
@@ -476,7 +518,7 @@ def run_bo_optimizer(config):
                 coords[:,0],
                 coords[:,1],
                 color='gray',
-                alpha=0.25,
+                alpha=0.15,
                 linewidth=1
             )
 
@@ -486,7 +528,7 @@ def run_bo_optimizer(config):
             seed_result.coords[:,1],
             color='blue',
             linewidth=3,
-            label='Seed Airfoil'
+            label='Seed'
         )
 
         # optimized airfoil
@@ -495,19 +537,26 @@ def run_bo_optimizer(config):
             best_result.coords[:,1],
             color='red',
             linewidth=3,
-            label='Optimized Airfoil'
+            label='Optimized'
         )
 
         plt.axis("equal")
 
-        plt.xlabel("x/c")
-        plt.ylabel("y/c")
+        plt.xlabel(r"$x/c$")
+
+        plt.ylabel(r"$y/c$")
 
         plt.title("Airfoil Geometry Evolution")
 
-        plt.grid(True)
+        plt.grid(
+            True,
+            linestyle='--',
+            alpha=0.5
+        )
 
         plt.legend()
+
+        plt.tight_layout()
 
         plt.show()
 
