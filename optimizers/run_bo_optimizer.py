@@ -189,6 +189,7 @@ def run_bo_optimizer(config):
     cl_history = []
     cd_history = []
     coords_history = []
+    design_history = []
 
     print("-----------------------------------")
     print("Building initial training data...")
@@ -249,9 +250,19 @@ def run_bo_optimizer(config):
 
         # save histories
         score_history.append(score)
+
         cl_history.append(aero_result.cl)
+
         cd_history.append(aero_result.cd)
+
         coords_history.append(aero_result.coords)
+
+        design_history.append([
+            design.max_camber,
+            design.max_camber_loc,
+            design.max_thickness,
+            design.max_thickness_loc,
+        ])
 
         return score
 
@@ -308,6 +319,40 @@ def run_bo_optimizer(config):
         reynolds=reynolds,
         seed_airfoil=seed_airfoil,
     )
+
+    # -------------------------------------------------
+    # SAVE SEED AND OPTIMIZED AIRFOIL COORDINATES
+    # -------------------------------------------------
+
+    if is_valid_result(seed_result):
+
+        np.savetxt(
+            f"seed_airfoil_{config['phase_name']}.dat",
+            seed_result.coords,
+            header="x y",
+            comments="",
+            fmt="%.8f"
+        )
+
+        print(
+            f"Saved seed coordinates to "
+            f"seed_airfoil_{config['phase_name']}.dat"
+        )
+
+    if is_valid_result(best_result):
+
+        np.savetxt(
+            f"optimized_airfoil_{config['phase_name']}.dat",
+            best_result.coords,
+            header="x y",
+            comments="",
+            fmt="%.8f"
+        )
+
+        print(
+            f"Saved optimized coordinates to "
+            f"optimized_airfoil_{config['phase_name']}.dat"
+        )
 
     # -------------------------------------------------
     # SCORE HISTORY
@@ -469,5 +514,56 @@ def run_bo_optimizer(config):
     else:
 
         print("Could not plot airfoils because one did not converge.")
+
+    # -------------------------------------------------
+    # SAVE HISTORY DATA
+    # -------------------------------------------------
+
+    best_so_far = np.maximum.accumulate(score_history)
+
+    history_data = np.column_stack([
+
+        np.arange(1, len(score_history)+1),
+
+        score_history,
+
+        best_so_far,
+
+        cl_history,
+
+        cd_history,
+
+        np.array(design_history)
+    ])
+
+    np.savetxt(
+
+        f"bo_history_{config['phase_name']}.csv",
+
+        history_data,
+
+        delimiter=",",
+
+        header=(
+            "iteration,"
+            "score,"
+            "best_score_so_far,"
+            "Cl,"
+            "Cd,"
+            "max_camber,"
+            "max_camber_loc,"
+            "max_thickness,"
+            "max_thickness_loc"
+        ),
+
+        comments="",
+
+        fmt="%.6f"
+    )
+
+    print(
+        f"\nSaved BO history to "
+        f"bo_history_{config['phase_name']}.csv"
+    )
 
     return X, y, x_best, y_best
