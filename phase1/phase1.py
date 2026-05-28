@@ -74,6 +74,14 @@ PHASE_CONFIG = {
     "bo": {"training_csv": HERE / "training_data_p1.csv",
         "bounds_csv": HERE / "design_variable_bounds_p1.csv",
         "max_iter": 5},
+    
+    #NSGA optimization settings
+    "nsga": {
+    "population_size": 20,
+    "n_generations": 600,
+    "target_valid_evals": 300,
+    "seed": 2,
+    },
 
     # Random/local search settings
     "random_search": {"n_iterations": 25,

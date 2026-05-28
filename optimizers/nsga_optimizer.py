@@ -17,6 +17,10 @@ import os
 import pandas as pd
 
 
+class TargetValidEvaluationsReached(Exception):
+    pass
+
+
 def export_airfoil_coords(coords, filepath):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     np.savetxt(filepath, coords, fmt="%.8f", header="x y", comments="")
@@ -26,7 +30,7 @@ def export_history(history, filepath):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
     df = pd.DataFrame({
-        "eval": np.arange(1, len(history["score"]) + 1),
+        "eval": history["eval"],
         "score": history["score"],
         "cl": history["cl"],
         "cd": history["cd"],
@@ -76,19 +80,18 @@ class NSGAProblem(ElementwiseProblem):
         self.history = history
 
         #evluation counter
-        self.eval_count = 0
+        self.eval_count = 0 #all attempted candidates
+        self.valid_eval_count = 0 #only converged/valid MSES candidates
+        self.target_valid_evals = config.get("nsga", {}).get("target_valid_evals", 300)
 
     #core objective function (inspiration from chromosome.forces)
     #pymoo requires this function name
     def _evaluate(self, x, out, *args, **kwargs):
         self.eval_count += 1
 
-        #evaluation number (for organization to print progress)
-        candidate = self.eval_count
-
         #print evaluation number
         print("-----------------------------------")
-        print(f"Eval {self.eval_count}")
+        print(f"Eval {self.eval_count} | Valid Eval {self.valid_eval_count}/{self.target_valid_evals}")
         print("-----------------------------------")
         print(f"x = [{x[0]:.4f}, {x[1]:.4f}, {x[2]:.4f}, {x[3]:.4f}]")
 
@@ -120,11 +123,14 @@ class NSGAProblem(ElementwiseProblem):
             out["F"] = [1e6]
             return
 
+        self.valid_eval_count += 1
+
         #compute score
         scoring_fn = self.config["scoring_function"]
         score = scoring_fn(aero, design)
 
         #store history of cl, cd, and score for plotting
+        self.history["eval"].append(self.valid_eval_count)
         self.history["x"].append(np.array(x, dtype=float))
         self.history["score"].append(score)
         self.history["cl"].append(aero.cl)
@@ -134,9 +140,13 @@ class NSGAProblem(ElementwiseProblem):
         print(f"Cl = {aero.cl:.5f}")
         print(f"Cd = {aero.cd:.5f}")
         print(f"Score = {score:.5f}")
+        print(f"Valid converged evaluations = {self.valid_eval_count}/{self.target_valid_evals}")
 
         #pymoo minimizes, so use negative score
         out["F"] = [-score]
+
+        if self.valid_eval_count >= self.target_valid_evals:
+            raise TargetValidEvaluationsReached
 
 
 def plot_history(history):
@@ -144,7 +154,7 @@ def plot_history(history):
         print("No valid NSGA evaluations to plot.")
         return
 
-    evals = np.arange(1, len(history["score"]) + 1)
+    evals = np.array(history["eval"])
 
     best_so_far = np.maximum.accumulate(history["score"])
 
@@ -210,8 +220,9 @@ def run_nsga_optimizer(config):
 
     #set default population size and number of generations
     population_size = nsga_config.get("population_size", 20)
-    n_generations = nsga_config.get("n_generations", 20)
+    n_generations = nsga_config.get("n_generations", 1000)
     seed = nsga_config.get("seed", 2) #randomization parameter for algorithm
+    target_valid_evals = nsga_config.get("target_valid_evals", 300)
 
     seed_design = config["seed_design"]
     seed_airfoil = config["seed_airfoil"]
@@ -230,6 +241,7 @@ def run_nsga_optimizer(config):
 
     #create list to store all design variables from candidate
     history = {
+        "eval": [],
         "x": [],
         "score": [],
         "cl": [],
@@ -241,8 +253,8 @@ def run_nsga_optimizer(config):
     print("Running NSGA optimization...")
     print("-----------------------------------")
     print(f"Population size: {population_size}")
-    print(f"Generations: {n_generations}")
-    print(f"Expected evaluations: {population_size * n_generations}")
+    print(f"Generation limit: {n_generations}")
+    print(f"Target valid converged evaluations: {target_valid_evals}")
 
     #create the problem optimziation object using inputs defined above
     problem = NSGAProblem(
@@ -261,13 +273,16 @@ def run_nsga_optimizer(config):
     #tell pymoo to stop after specific number of generations
     termination = get_termination("n_gen", n_generations)
 
-    res = minimize(
-        problem,
-        algorithm,
-        termination,
-        seed=seed,
-        verbose=True,
-    )
+    try:
+        res = minimize(
+            problem,
+            algorithm,
+            termination,
+            seed=seed,
+            verbose=True,
+        )
+    except TargetValidEvaluationsReached:
+        print(f"\nReached {problem.valid_eval_count} valid converged airfoils. Stopping NSGA.")
 
     #if no scores, then all invalid iterations
     if len(history["score"]) == 0:
@@ -283,7 +298,8 @@ def run_nsga_optimizer(config):
     print("\n===================================")
     print("NSGA OPTIMIZATION COMPLETE")
     print("===================================")
-    print(f"\nBest score = {y_best:.5f}")
+    print(f"\nValid converged evaluations = {len(history['score'])}")
+    print(f"Best score = {y_best:.5f}")
     print(f"Best Cl = {history['cl'][best_idx]:.5f}")
     print(f"Best Cd = {history['cd'][best_idx]:.5f}")
     print(f"  max_camber:         {best_design.max_camber:.4f}")

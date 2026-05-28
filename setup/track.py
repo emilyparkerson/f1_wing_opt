@@ -6,8 +6,8 @@ TRACK_WEIGHTS = {
 
 #create dictionary from seed airfoil data (df = -cl)
 REF_VALS = {
-    "df_p1": 1.00525,
-    "cd_p1": 0.01305,
+    "df_p1": 1.21820,
+    "cd_p1": 0.01635,
     "df_p2": 1.2,
     "cd_p2": 0.4,
     "alpha": 0
