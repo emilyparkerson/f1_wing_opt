@@ -12,6 +12,29 @@ from setup.design_vars import designParameters
 
 from optimizers.run_bo_optimizer import is_valid_result
 
+#FOR EXPORTING DATA
+import os
+import pandas as pd
+
+
+def export_airfoil_coords(coords, filepath):
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    np.savetxt(filepath, coords, fmt="%.8f", header="x y", comments="")
+
+
+def export_history(history, filepath):
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+    df = pd.DataFrame({
+        "eval": np.arange(1, len(history["score"]) + 1),
+        "score": history["score"],
+        "cl": history["cl"],
+        "cd": history["cd"],
+    })
+
+    df.to_csv(filepath, index=False)
+#END EXPPORTING DATA FUNCTIONS
+
 #convert optimizer variables into airfoil design object
 def design_from_x(x):
     return designParameters(
@@ -187,7 +210,7 @@ def run_nsga_optimizer(config):
 
     #set default population size and number of generations
     population_size = nsga_config.get("population_size", 20)
-    n_generations = nsga_config.get("n_generations", 5)
+    n_generations = nsga_config.get("n_generations", 20)
     seed = nsga_config.get("seed", 2) #randomization parameter for algorithm
 
     seed_design = config["seed_design"]
@@ -300,5 +323,13 @@ def run_nsga_optimizer(config):
         plot_seed_vs_optimized(seed_result, best_result)
     else:
         print("Could not plot airfoils because one did not converge.")
+
+
+    #EXPORT DATA
+    export_airfoil_coords(seed_result.coords, "outputs/seed/seed_airfoil_inboard.dat")
+    
+    export_airfoil_coords(best_result.coords, "outputs/nsga/nsga_optimized_airfoil_inboard.dat")
+
+    export_history(history, "outputs/nsga/nsga_history_inboard.csv")
 
     return np.array(history["x"]), np.array(history["score"]), x_best, y_best
