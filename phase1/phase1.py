@@ -76,9 +76,9 @@ PHASE_CONFIG = {
     
     #NSGA optimization settings
     "nsga": {
-    "population_size": 5,
-    "n_generations": 1,
-    "target_valid_evals": 5,
+    "population_size": 20,
+    "n_generations": 600,
+    "target_valid_evals": 400,
     "seed": 2,
     },
 
