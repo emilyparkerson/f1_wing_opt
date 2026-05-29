@@ -342,10 +342,10 @@ def run_nsga_optimizer(config):
 
 
     #EXPORT DATA
-    export_airfoil_coords(seed_result.coords, "outputs/seed/seed_airfoil_inboard_05.dat")
+    export_airfoil_coords(seed_result.coords, "outputs/seed/seed_airfoil_outboard_05.dat")
     
-    export_airfoil_coords(best_result.coords, "outputs/nsga/nsga_optimized_airfoil_inboard_05.dat")
+    export_airfoil_coords(best_result.coords, "outputs/nsga/nsga_optimized_airfoil_outboard_05.dat")
 
-    export_history(history, "outputs/nsga/nsga_history_inboard_05.csv")
+    export_history(history, "outputs/nsga/nsga_history_outboard_05.csv")
 
     return np.array(history["x"]), np.array(history["score"]), x_best, y_best
