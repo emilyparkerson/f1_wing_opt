@@ -72,7 +72,7 @@ PHASE_CONFIG = {
     # Bayesian optimization settings
     "bo": {"training_csv": HERE / "training_data_p1.csv",
         "bounds_csv": HERE / "design_variable_bounds_p1.csv",
-        "max_iter": 300},
+        "max_iter": 400},
 
     # Random/local search settings
     "random_search": {"n_iterations": 25,
