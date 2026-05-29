@@ -39,7 +39,7 @@ def bayesian_loop(X0, y0, objective_fn, bounds, constraints, max_iter=20):
 
         valid_candidate_found = False
 
-        for attempt in range(20):
+        for attempt in range(15):
 
             x_next_norm = optimize_acquisition(
                 X_norm,
