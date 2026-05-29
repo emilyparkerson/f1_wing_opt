@@ -148,7 +148,7 @@ def run_mses(
     mses_settings = MSESSettings(
 
         xtrs={
-            "Airfoil-1": [1.0, 1.0]
+            "Airfoil-1": [0.05, 0.05]
         },
 
         Ma=mach,
