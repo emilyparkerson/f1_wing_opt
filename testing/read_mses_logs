@@ -1,0 +1,88 @@
+"""
+Read the MSES/MSET log files after a failed run.
+pymead returns a dict of {tool: log_path}, NOT the log text. We open
+each file and print the last chunk -- that's where the real error sits.
+"""
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import traceback
+from phase2.phase2 import P2_RE_IB_CONFIG
+from setup.aero_interface import _element_to_coords
+from setup.geometry import load_airfoil_dat
+import numpy as np, tempfile
+
+from pymead.analysis.calc_aero_data import (
+    calculate_aero_data, MSETSettings, MSESSettings, AirfoilMSETMeshingParameters,
+)
+from pymead.core.geometry_collection import GeometryCollection
+
+def show_log(path, n_lines=80):
+    if path is None:
+        print("  (no log -- tool was not run)")
+        return
+    if not os.path.exists(path):
+        print(f"  log path {path} does not exist")
+        return
+    with open(path, errors="replace") as f:
+        lines = f.readlines()
+    print(f"  --- {path}  ({len(lines)} lines total, showing last {min(n_lines,len(lines))}) ---")
+    for ln in lines[-n_lines:]:
+        print(f"    {ln.rstrip()}")
+
+# Build P2_IB exactly as run_mses_elements does
+config = P2_RE_IB_CONFIG
+specs = config["elements"]
+all_coords = []
+for spec in specs:
+    d = config["seed_design"] if spec["role"] == "morph" else None
+    all_coords.append(_element_to_coords(spec, design=d))
+
+NAME = "logdiag"
+geo_col = GeometryCollection()
+airfoils = []
+for i, c in enumerate(all_coords):
+    p = os.path.join(tempfile.gettempdir(), f"{NAME}_el{i}.dat")
+    np.savetxt(p, c)
+    pl = geo_col.add_polyline(source=p)
+    airfoils.append(pl.add_polyline_airfoil())
+mea = geo_col.add_mea(airfoils)
+
+names = [f"Airfoil-{i+1}" for i in range(len(airfoils))]
+mset = MSETSettings(
+    multi_airfoil_grid={nm: AirfoilMSETMeshingParameters() for nm in names},
+    airfoil_side_points=200,
+)
+mses = MSESSettings(
+    xtrs={nm: [0.05, 0.05] for nm in names},
+    Ma=config["mach"], Re=config["reynolds"], alfa=-3.0,
+    alfa_Cl_mode=0, timeout=500,
+)
+mplot = {"timeout":15.0,"grid_stats":False,"Mach":False,"Streamline_Grid":False,
+         "Grid":False,"Grid_Zoom":False,"flow_field":False,"Tecplot":False,
+         "Paraview":False,"CPK":False}
+
+try:
+    aero_data, logs = calculate_aero_data(
+        conn=None, airfoil_coord_dir=tempfile.gettempdir(), airfoil_name=NAME,
+        mea=mea, tool="MSES", mset_settings=mset, mses_settings=mses,
+        mplot_settings=mplot, export_Cp=False, save_aero_data=True,
+    )
+except Exception as e:
+    print("exception:", e); traceback.print_exc(); aero_data = {}; logs = {}
+
+print("\n=== aero_data flags ===")
+for k in ("errored_out","timed_out","converged","Cl","Cd"):
+    print(f"  {k}: {aero_data.get(k)}")
+
+print("\n=== logs dict ===")
+print(f"  {logs}")
+
+print("\n=== MSET log ===")
+show_log(logs.get("mset"))
+
+print("\n=== MSES log ===")
+show_log(logs.get("mses"))
+
+print("\n=== MPLOT log ===")
+show_log(logs.get("mplot"))

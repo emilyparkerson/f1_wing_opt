@@ -1,7 +1,12 @@
 #create dictionary for track weights (adjust these possibly??)
-TRACK_WEIGHTS = {
+TRACK_WEIGHTS_P1 = {
     "straights": 0.47,
     "turns": 0.53 
+}
+
+TRACK_WEIGHTS_P2 = {
+    "straights": 0.80,
+    "turns": 0.20 
 }
 
 #create dictionary from seed airfoil data (df = -cl)

@@ -1,4 +1,4 @@
-from phase1.phase1 import PHASE_CONFIG
+from phase2.phase2 import PHASE_CONFIG
 from optimizers.run_random_optimizer import run_random_optimizer
 from optimizers.run_bo_optimizer import run_bo_optimizer
 

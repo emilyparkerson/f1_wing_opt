@@ -1,13 +1,84 @@
 from pathlib import Path
-from setup.scoring import scoringp2
-from bayesian_optimization.run_bo_phase import run_bo_phase
+
+from setup.scoring import scoring_p2
+
+from setup.constraints import airfoil_constraints
+
+from setup.design_vars import (
+    designParameters,
+    airfoilBounds
+)
 
 HERE = Path(__file__).parent
 
-run_bo_phase(
-    training_csv = HERE / "training_data_p2.csv",
-    bounds_csv = HERE / "design_variable_bounds_p2.csv",
-    scoring_function = scoringp2,
-    phase_name = "P2",
-    max_iter = 25,
-)
+
+PHASE_CONFIG = {
+
+    # Phase info
+    "phase_name": "P2_IB",
+    "scoring_function": scoring_p2,
+
+    # Flow conditions
+    # "alpha": 0.0,
+    # "mach": 0.23,
+    # "reynolds": 1e6,
+
+    # Flow conditions
+    # "alpha": 0.0,
+    # "mach": 0.061220492,
+    # "reynolds": 592172.4228,
+
+    # Flow conditions
+    # "alpha": -2.0,
+    # "mach": 0.081627322,
+    # "reynolds": 789563.2304,
+
+    # Flow conditions
+    "alpha": -1.0,
+    "mach": 0.093871421,
+    "reynolds": 907997.7149,
+
+    # Training data
+    "training_n":10,
+
+    # Initial design (for MSES, training data is used for BO)
+    "seed_airfoil": HERE / "inboard_seed_phase2.txt",
+    # "seed_design": designParameters(
+    #     max_camber=0.02544,
+    #     max_camber_loc=0.6616,
+    #     max_thickess=0.1421,
+    #     max_thickness_loc=0.2919),
+    # "seed_design": designParameters(
+    #       max_camber=0.04382,
+    #       # can't go any higher for max camber location or seed diverges
+    #     max_camber_loc=0.4,
+    #     max_thickness=0.1767,
+    #     max_thickness_loc=0.2113),
+
+    "seed_design": designParameters(
+        max_camber=0.04382,
+        max_camber_loc=0.45,
+        max_thickness=0.1767,
+        max_thickness_loc=0.24),
+
+    # Design variable bounds
+    "bounds": airfoilBounds(
+        max_camber=(0.00, 0.15),
+        max_camber_loc=(0.30, 0.70),
+        max_thickness=(0.17, 0.22),
+        max_thickness_loc=(0.15, 0.35)),
+    "constraints": airfoil_constraints,
+
+    # Bayesian optimization settings
+    "bo": {"training_csv": HERE / "training_data_p2.csv",
+        "bounds_csv": HERE / "design_variable_bounds_p2.csv",
+        "max_iter": 400},
+
+    # Random/local search settings
+    "random_search": {"n_iterations": 25,
+        "step_size": {
+            "max_camber": 0.003,
+            "max_camber_loc": 0.02,
+            "max_thickness": 0.005,
+            "max_thickness_loc": 0.01}}
+}
