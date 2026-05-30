@@ -1,10 +1,10 @@
-from phase1.phase1 import P1_IB_CONFIG
-from phase1.phase1 import P1_OB_CONFIG
+from phase2.phase2 import P2_RE_OB_CONFIG
+
 
 from optimizers.run_random_optimizer import run_random_optimizer
 from optimizers.run_bo_optimizer import run_bo_optimizer
 
-phase_configs = [P1_IB_CONFIG, P1_OB_CONFIG]
+phase_configs = [P2_RE_OB_CONFIG]
 OPTIMIZER = "bo"
 
 def main():

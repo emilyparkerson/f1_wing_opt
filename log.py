@@ -1,19 +1,18 @@
 import csv
 import os
 
-# creates csv file if it does not already exist
-def initialize_log(filename):
-    # don't overwrite existing log file
-    if os.path.exists(filename):
-        return
-    with open(filename, "w", newline="") as f:
-        writer = csv.writer(f)
-        # column headers
-        writer.writerow(["iteration","cl","cd","score"])
+def initialize_log(log_file):
+    with open(log_file, "w", newline="") as f:
+        csv.writer(f).writerow(["iter", "cl", "cd", "score",
+                                "max_camber", "max_camber_loc",
+                                "max_thickness", "max_thickness_loc",
+                                "converged"])
 
-# appends optimization results to csv file
-def log_iteration(filename,iteration,cl,cd,score):
-
-    with open(filename, "a", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow([iteration,cl,cd,score])
+def log_iteration(log_file, n, cl, cd, score,
+                  max_camber, max_camber_loc, max_thickness, max_thickness_loc,
+                  converged):
+    with open(log_file, "a", newline="") as f:
+        csv.writer(f).writerow([n, cl, cd, score,
+                                max_camber, max_camber_loc,
+                                max_thickness, max_thickness_loc,
+                                converged])
