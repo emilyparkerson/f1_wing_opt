@@ -38,6 +38,8 @@ result = run_mses_elements(
     alpha=P2_RE_OB_CONFIG["alpha"],
     mach=P2_RE_OB_CONFIG["mach"],
     reynolds=P2_RE_OB_CONFIG["reynolds"],
+    xtr_upper=P2_RE_OB_CONFIG["xtr_upper"],
+    xtr_lower=P2_RE_OB_CONFIG["xtr_lower"],
     plot_geometry=True,
 )
 

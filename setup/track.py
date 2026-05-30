@@ -18,15 +18,16 @@ PHASE3_WEIGHTS = {
     "downforce": 0.35,
     "drag": 0.65 
 }
+
 #create dictionary from seed airfoil data (df = -cl)
-REF_VALS = {
-    "df_p1": 1.08588,
-    "cd_p1": 0.0145,
-    "df_p2": 1.2,
-    "cd_p2": 0.4,
-    "df_p3": 0,
-    "cd_p3": 0
-}
+# REF_VALS = {
+#     "df_p1": 1.08588,
+#     "cd_p1": 0.0145,
+#     "df_p2": 1.2,
+#     "cd_p2": 0.4,
+#     "df_p3": 0,
+#     "cd_p3": 0
+# }
 
 #invalid score for BAD designs (large negative number so that design is not chosen)
 #INVALID_SCORE = -1

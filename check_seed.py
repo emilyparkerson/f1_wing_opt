@@ -3,7 +3,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 from setup.geometry import load_airfoil_dat
 
-x, y = load_airfoil_dat("phase2/outboard_seed_phase2.dat")
+x, y = load_airfoil_dat("phase2/inboard_seed_phase2.dat")
 chord = float(np.max(x) - np.min(x))
 le_idx = int(np.argmin(x))
 te_idx = int(np.argmax(x))

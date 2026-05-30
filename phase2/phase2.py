@@ -22,7 +22,7 @@ HERE = Path(__file__).parent
 P2_RE_OB_CONFIG = {
 
     # Phase info
-    "phase_name": "Phase 2 Rear Element Outboard Configuration",
+    "phase_name": "P2 RE OB",
     "scoring_function": scoring_p2,
     "plotting": True,
     "logging": True,
@@ -30,11 +30,11 @@ P2_RE_OB_CONFIG = {
 
     # Flow conditions (outboard from spreadsheet)
     "alpha": 0.0,
-    "mach": 0.07875404055,
-    #"reynolds": 1184344.846, # GUI: 1.25 m at Re 3.57M. Your code: 1.0 m at Re 1.18M.
-    #"reynolds": 2852544, # Lref_this_one = 1.0, Lref_gui = 1.25
-    "reynolds": 2385634.433, # Lref_this_one = 1.0, Lref_gui = 1.25
+    "mach": 0.08276085807,
+    "reynolds": 2506449.402,
 
+    "xtr_upper": 0.05,
+    "xtr_lower": 0.05,
 
     "target_cl": None,                # fixed-alpha mode
 
@@ -74,15 +74,15 @@ P2_RE_OB_CONFIG = {
 
     # Reference values for scoring
     "ref_vals": {
-        "df": 2.75241,
-        "cd": 0.02847,
+        "df": 3.04152,
+        "cd": 0.03028,
     },
 
     # Bayesian optimization settings
     "bo": {"training_csv": HERE / "training_data_p2_OB.csv",
         "bounds_csv": HERE / "design_variable_bounds_p2.csv",
-        "max_iter": 5000,              # hard ceiling -- shouldn't be reached
-        "target_converged": 400},       # stop after this many converged evals
+        "max_iter": 5000,  
+        "target_converged": 400},
 
     # Random/local search settings
     "random_search": {"n_iterations": 5,
@@ -95,24 +95,26 @@ P2_RE_OB_CONFIG = {
 
 
 
+
+
 P2_RE_IB_CONFIG = {
 
     # Phase info
-    "phase_name": "Phase 2 Rear Element Inboard Configuration",
+    "phase_name": "P2 RE IB",
     "scoring_function": scoring_p2,
     "plotting": True,
     "logging": True,
     "plot_geometry": False,
 
     # Flow conditions (outboard from spreadsheet)
-    "alpha": 0.0,
-    "mach": 0.05995832682,
-    #"reynolds": 1184344.846, # GUI: 1.25 m at Re 3.57M. Your code: 1.0 m at Re 1.18M.
-    #"reynolds": 2852544, # Lref_this_one = 1.0, Lref_gui = 1.25
-    "reynolds": 1815864.6, # Lref_this_one = 1.0, Lref_gui = 1.25
+    "alpha": -2.5,
+    "mach": 0.0630088633,
+    "reynolds": 1908251.454, 
 
+    "xtr_upper": 1.0,
+    "xtr_lower": 1.0,
 
-    "target_cl": None,                # fixed-alpha mode
+    "target_cl": None, # fixed-alpha mode
 
     # Training data
     "training_n": 5,
@@ -150,15 +152,15 @@ P2_RE_IB_CONFIG = {
 
     # Reference values for scoring
     "ref_vals": {
-        "df": 2.75241,
-        "cd": 0.02847,
+        "df": 3.19640,
+        "cd": 0.03808,
     },
 
     # Bayesian optimization settings
     "bo": {"training_csv": HERE / "training_data_p2_IB.csv",
         "bounds_csv": HERE / "design_variable_bounds_p2.csv",
-        "max_iter": 5000,              # hard ceiling -- shouldn't be reached
-        "target_converged": 400},       # stop after this many converged evals
+        "max_iter": 5000,       
+        "target_converged": 400},
 
     # Random/local search settings
     "random_search": {"n_iterations": 5,

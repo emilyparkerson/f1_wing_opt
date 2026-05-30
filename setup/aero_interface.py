@@ -44,7 +44,7 @@ from setup.geometry import (
 
 # Shared MSES-settings / run / failure-check block
 def _run_mses_on_mea(mea, pymead_coords, names, name, alpha, mach, reynolds,
-                     target_cl=None):
+                     target_cl=None, xtr_upper=0.05, xtr_lower=0.05):
     mset = MSETSettings(
         multi_airfoil_grid={
             nm: AirfoilMSETMeshingParameters(dsLE_dsAvg=0.25, dsTE_dsAvg=0.70)
@@ -54,8 +54,8 @@ def _run_mses_on_mea(mea, pymead_coords, names, name, alpha, mach, reynolds,
     )
     if target_cl is None:
         mses = MSESSettings(
-            #xtrs={nm: [1.0, 1.0] for nm in names},   # free transition (was 0.05),
-            xtrs={nm: [0.05, 0.05] for nm in names},
+            #xtrs={nm: [0.05, 0.05] for nm in names},   # free transition (was 1.0),
+            xtrs={nm: [xtr_upper, xtr_lower] for nm in names},
             Ma=mach, Re=reynolds, alfa=alpha,
             alfa_Cl_mode=0,
             timeout=60.0,                             # was 800.0
@@ -63,7 +63,7 @@ def _run_mses_on_mea(mea, pymead_coords, names, name, alpha, mach, reynolds,
         )
     else:
         mses = MSESSettings(
-            xtrs={nm: [0.05, 0.05] for nm in names},
+            xtrs={nm: [xtr_upper, xtr_lower] for nm in names},
             Ma=mach, Re=reynolds,
             alfa=alpha,
             Cl=target_cl,
@@ -248,7 +248,8 @@ def run_mses_elements(design, elements,
                       reynolds=0.7e6,
                       plot_geometry=False,
                       plot_comparison=False,
-                      target_cl=None):
+                      target_cl=None,
+                      xtr_upper=0.05, xtr_lower=0.05):
     # Build coords for every element, in config order.
     all_coords = []
     for spec in elements:
@@ -279,4 +280,5 @@ def run_mses_elements(design, elements,
     return _run_mses_on_mea(
         mea, pymead_coords, names, name, alpha, mach, reynolds,
         target_cl=target_cl,
+        xtr_upper=xtr_upper, xtr_lower=xtr_lower,      
     )

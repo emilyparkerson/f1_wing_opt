@@ -122,6 +122,8 @@ def run_bo_optimizer(config):
             alpha=alpha, mach=mach, reynolds=reynolds,
             plot_geometry=config.get("plot_geometry", False),
             target_cl=config.get("target_cl"),
+            xtr_upper=config.get("xtr_upper", 0.05),     # NEW
+            xtr_lower=config.get("xtr_lower", 0.05),     # NEW
         )
     else:
         mses_config = MSESConfig(
@@ -130,6 +132,8 @@ def run_bo_optimizer(config):
             seed_airfoil=seed_airfoil,
             plot_geometry=config.get("plot_geometry", False),
             target_cl=config.get("target_cl"),
+            xtr_upper=config.get("xtr_upper", 0.05),     # NEW
+            xtr_lower=config.get("xtr_lower", 0.05),     # NEW
         )
 
     # Setup logging
