@@ -33,8 +33,8 @@ P2_RE_OB_CONFIG = {
     "mach": 0.08276085807,
     "reynolds": 2506449.402,
 
-    "xtr_upper": 0.05,
-    "xtr_lower": 0.05,
+    "xtr_upper": 1.0,
+    "xtr_lower": 1.0,
 
     "target_cl": None,                # fixed-alpha mode
 
