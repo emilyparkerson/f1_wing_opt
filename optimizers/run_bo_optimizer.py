@@ -75,6 +75,7 @@ def generate_training_data(seed_design, bounds_arr, training_n, scoring_fn,
     design = design_from_x(X_list[0])
     aero = mses_config(design=design, name="init")
     y_list = [scoring_fn(aero, ref_vals)]
+    print("Seed score is: ", scoring_fn(aero, ref_vals))
     print("Added seed airfoil to training set")
 
     # Random perturbations of the seed
@@ -88,6 +89,7 @@ def generate_training_data(seed_design, bounds_arr, training_n, scoring_fn,
             if score != -1:
                 X_list.append(x)
                 y_list.append(score)
+                print("Training airfoil score is: ", score)
                 print(f"Appended training airfoil {len(X_list)}")
     print(len(X_list), "training airfoils generated")
     print(len(y_list), "training scores generated")
