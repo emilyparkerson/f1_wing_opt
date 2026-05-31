@@ -3,8 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 paths = {
-    "best":  "best_so_far_Phase_2_Rear_Element_Outboard_Configuration.dat",
-    "seed":  "phase2/outboard_seed_phase2.dat",
+    "best":  "phase3/phase2_winner_IB.dat",
+    "seed":  "phase2/inboard_seed_phase2.dat",
 }
 
 def split_elements(coords, gap_thresh=0.1):

@@ -58,8 +58,9 @@ def _run_mses_on_mea(mea, pymead_coords, names, name, alpha, mach, reynolds,
             xtrs={nm: [xtr_upper, xtr_lower] for nm in names},
             Ma=mach, Re=reynolds, alfa=alpha,
             alfa_Cl_mode=0,
-            timeout=60.0,                             # was 800.0
-            iterations=300,                           # new; was pymead default 100
+            timeout=30.0,                             # was 800.0
+            iterations=300,
+            aritifical_dissipation=1.15,                           # new; was pymead default 100
         )
     else:
         mses = MSESSettings(
@@ -68,8 +69,9 @@ def _run_mses_on_mea(mea, pymead_coords, names, name, alpha, mach, reynolds,
             alfa=alpha,
             Cl=target_cl,
             alfa_Cl_mode=1,
-            timeout=60.0,
+            timeout=30.0,
             iterations=300,
+            aritifical_dissipation=1.15,
         )
     # pymead 2.0.0b13 bug workaround: consumer reads capitalized keys.
     mplot = {

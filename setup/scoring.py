@@ -1,5 +1,4 @@
-from setup.track import PHASE1_WEIGHTS, PHASE2_WEIGHTS, PHASE3_WEIGHTS #INVALID_SCORE
-
+from setup.track import PHASE1_WEIGHTS, PHASE2_WEIGHTS, PHASE3_WEIGHTS, INVALID_SCORE
 #check if valid aero results are returned
 def valid_aero(cl, cd):
     if cl is None or cd is None:
@@ -77,7 +76,7 @@ def scoring_p3(aero_result, aoa_deg, ref_vals):
         return INVALID_SCORE
 
     #penalize unrealistic angles of attack
-    if not -10 <= aoa_deg <= 5:
+    if not -15 <= aoa_deg <= 5:
         return INVALID_SCORE
 
     cd_weight = PHASE3_WEIGHTS["drag"] 

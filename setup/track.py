@@ -15,8 +15,8 @@ PHASE2_WEIGHTS = {
 
 #for straights: penalize drag heavily
 PHASE3_WEIGHTS = {
-    "downforce": 0.35,
-    "drag": 0.65 
+    "downforce": 0.2,
+    "drag": 0.8 
 }
 
 #create dictionary from seed airfoil data (df = -cl)
@@ -30,7 +30,7 @@ PHASE3_WEIGHTS = {
 # }
 
 #invalid score for BAD designs (large negative number so that design is not chosen)
-#INVALID_SCORE = -1
+INVALID_SCORE = -1
 
 #path to seed file
 PHASE1_SEED_PATH = r"C:\Users\ecpar\Downloads\inboard_seed_phase1.txt"
