@@ -28,7 +28,7 @@ P2_RE_OB_CONFIG = {
     "logging": True,
     "plot_geometry": False,
 
-    # Flow conditions (outboard from spreadsheet)
+    # Flow conditions
     "alpha": 0.0,
     "mach": 0.08276085807,
     "reynolds": 2506449.402,
@@ -36,7 +36,7 @@ P2_RE_OB_CONFIG = {
     "xtr_upper": 1.0,
     "xtr_lower": 1.0,
 
-    "target_cl": None,                # fixed-alpha mode
+    "target_cl": None,
 
     # Training data
     "training_n": 5,
@@ -52,7 +52,7 @@ P2_RE_OB_CONFIG = {
 
     # Element order: Airfoil-1 = seed flap (morph), Airfoil-2 = main winner (fixed).
     # The morph spec specifies chord/LE/AoA so the morphed flap lands where the
-    # seed file sits in MSES coordinates -- matching the converged geometry
+    # seed file sits in MSES coordinates, matching the converged geometry
     # from check_converge.py.
     "elements": [
         {"role": "morph",
@@ -74,8 +74,8 @@ P2_RE_OB_CONFIG = {
 
     # Reference values for scoring
     "ref_vals": {
-        "df": 3.04152,
-        "cd": 0.03028,
+        "df": 2.76157,
+        "cd": 0.02577,
     },
 
     # Bayesian optimization settings
@@ -130,7 +130,7 @@ P2_RE_IB_CONFIG = {
 
     # Element order: Airfoil-1 = seed flap (morph), Airfoil-2 = main winner (fixed).
     # The morph spec specifies chord/LE/AoA so the morphed flap lands where the
-    # seed file sits in MSES coordinates -- matching the converged geometry
+    # seed file sits in MSES coordinates, matching the converged geometry
     # from check_converge.py.
     "elements": [
         {"role": "morph",

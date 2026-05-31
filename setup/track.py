@@ -15,8 +15,8 @@ PHASE2_WEIGHTS = {
 
 #for straights: penalize drag heavily
 PHASE3_WEIGHTS = {
-    "downforce": 0.35,
-    "drag": 0.65 
+    "downforce": 0.2,
+    "drag": 0.8 
 }
 
 #create dictionary from seed airfoil data (df = -cl)
