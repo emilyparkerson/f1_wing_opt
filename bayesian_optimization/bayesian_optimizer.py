@@ -43,7 +43,7 @@ def denormalize(x_norm, bounds):
     denormalized_x = bounds[:, 0] + x_norm * (bounds[:, 1] - bounds[:, 0])
     return denormalized_x
 
-def bayesian_loop(X0, y0, objective_fn, bounds, constraints, max_iter=20):
+def bayesian_loop(X0, y0, objective_fn, bounds, constraints, max_iter=15):
     '''
     Run Bayesian optimization for max_iter iterations
 

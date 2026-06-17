@@ -1,287 +1,474 @@
-"""
-Airfoil geometry - minimal version.
-
-The seed airfoil is given in Selig order, possibly in inverted (rear-wing
-/ downforce) orientation: the suction surface points DOWN, so the seed's
-bulge is on the negative-y side of the chord line.
-
-We decompose the seed into a camber line c(x) and a thickness
-distribution t(x) on a cosine x-grid, build a new (c, t) from the
-design, and stitch back into a Selig loop. If the seed was inverted,
-the output is flipped vertically so it sits in the same inverted pose
-as the seed. MSES sees the wing in its installed (downforce-producing)
-pose, and with df = -cl in the scoring, a properly cambered rear wing
-gives cl < 0 and df > 0.
-
-The trailing edge is left open with whatever finite gap the seed
-thickness implies - MSES handles open TEs natively.
-"""
-
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import PchipInterpolator
-
 from setup.track import SECOND_ELM_LOC
 
+#NOTE1: CAMBERED AIRFOIL MUST BE USED AS SEED AIRFOIL
+#NOTE2: PROVIDE SEED AIRFOIL IN SELIF FORMAT (DOES NOT HAVE TO BE INVERTED)
 
-# -----------------------------------------------------------------------
-# I/O
-# -----------------------------------------------------------------------
+#function to generate new airfoil based on design parameters
+def new_airfoil(thickness_seed, x_common, designParameters, n_points, smoothing_fac, aoa):
 
-def load_airfoil_dat(path):
-    """Read a Selig .dat / .txt file. Returns (x, y) as 1-D arrays."""
-    xs, ys = [], []
-    with open(path) as f:
-        for line in f:
-            parts = line.split()
-            if len(parts) != 2:
-                continue
-            try:
-                xs.append(float(parts[0])); ys.append(float(parts[1]))
-            except ValueError:
-                pass
-    return np.asarray(xs), np.asarray(ys)
+    #REMOVE ONCE DONE IN OPTIMZIER
+    #check_constraints(designParameters)
 
+    max_camber = designParameters.max_camber
+    max_camber_loc = designParameters.max_camber_loc
+    max_thickness = designParameters.max_thickness
+    max_thickness_loc = designParameters.max_thickness_loc
 
-# -----------------------------------------------------------------------
-# Basic utilities
-# -----------------------------------------------------------------------
+    x_cos_coords = cosine_spacing(n_points)
+
+    #numerical solution
+    #camber_new = morph(x_common, camber_seed, max_camber_loc, max_camber, x_cos_coords, smoothing_fac)
+    thickness_new = morph(x_common, thickness_seed, max_thickness_loc, max_thickness, x_cos_coords, smoothing_fac)
+
+    #analytical solution (works better for camber)
+    camber_new = analytical_camber(x_cos_coords, max_camber, max_camber_loc)
+
+    #based on new thickness and camber distributions, rebuild coordinates
+    xu_morph, yu_morph, xl_morph, yl_morph = rebuild(x_cos_coords, camber_new, thickness_new)
+
+    #re-invert airfoil
+    xu_morph, yu_morph, xl_morph, yl_morph = xu_morph, -yl_morph, xl_morph, -yu_morph
+
+    #fix issues with leading edge
+    xu_morph, yu_morph, xl_morph, yl_morph = fix_le(xu_morph, yu_morph, xl_morph, yl_morph)
+
+    #re-rotate airfoil to seed angle of attack
+    if abs(np.degrees(aoa)) > 0.0:
+        xu_morph, yu_morph = unrotate_airfoil(xu_morph, yu_morph, aoa)
+        xl_morph, yl_morph = unrotate_airfoil(xl_morph, yl_morph, aoa)
+
+    return xu_morph, yu_morph, xl_morph, yl_morph, camber_new, thickness_new, x_cos_coords
+
+#make sure inputted design parameters are withing constrained region (REMOVE ONCE DONE IN OPTIMIZER)
+# def check_constraints(des):
+#     assert des.max_thickness > des.max_camber, "thickness must exceed camber"
+#     assert des.max_thickness >= 1.0 * des.max_camber, "thickness/camber ratio too low"
+#     assert 0.06 <= des.max_thickness <= 0.25
+#     assert 0.00 <= des.max_camber <= 0.15
+#     assert 0.15 <= des.max_thickness_loc <= 0.45
+#     assert 0.30 <= des.max_camber_loc <= 0.70
+#     assert des.max_thickness_loc < des.max_camber_loc, "thickness peak should be forward of camber peak"
+
+def plot_airfoil(des, seed_path, phase, fixed_el_pts=None, aoa_phase3=0.0):
+    #update correct path in config.py
+    x_seed, y_seed = load_airfoil_dat(seed_path)
+
+    #get seed airfoil and new airfoil
+    x_common, camber_seed, thickness_seed, aoa = get_seed(x_seed, y_seed)
+    xu_morph, yu_morph, xl_morph, yl_morph, camber_new, thickness_new, x_cos_coords = new_airfoil(thickness_seed, 
+    x_common, des, 160, smoothing_fac= None, aoa=aoa)
+
+    #get coordinates
+    points = get_coords(xu_morph, xl_morph, yu_morph, yl_morph, phase, aoa_deg=aoa_phase3)
+
+    #plot
+    plt.figure()
+
+    #if phase 2, plot fixed element
+    if fixed_el_pts is not None:
+        plt.plot(fixed_el_pts[:,0], fixed_el_pts[:,1], '-')
+
+    #plot new element
+    plt.plot(points[:,0], points[:,1], '-')
+
+    #format plot
+    plt.xlabel("x/c, dimensionless")
+    plt.ylabel("y/c, dimensionless")
+    plt.grid(True)
+    plt.axis("equal")
+    plt.show()
+
+#function to return thickness and camber distributions based on seed coordinates
+def get_seed(x, y):
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+
+    #get seed angle of attack (for re-rotation later)
+    aoa = get_aoa(x, y)
+    #print(f"Detected Seed Airfoil AoA: {np.degrees(aoa):.2f} degrees")
+
+    #remove original angle of attack (functions only work at 0 degrees)
+    if abs(np.degrees(aoa)) > 0.0:
+        x, y = rotate_airfoil(x, y, aoa)
+
+    #uninvert airfoil (putting in standard orientation)
+    y = -y
+
+    x, y = normalize(x, y)
+    xu_seed, yu_seed, xl_seed, yl_seed = split_ul(x, y)
+    x_common, camber_seed, thickness_seed = get_c_t(xu_seed, yu_seed, xl_seed, yl_seed, n_common=200)
+    return x_common, camber_seed, thickness_seed, aoa
+
+def normalize(x, y):
+    x_min, x_max = x.min(),x.max()
+    chord = x_max - x_min
+
+    #normalize with respect to the chord
+    x = (x - x_min)/chord
+    y = y/chord
+
+    return x, y
+
+def split_ul(x, y):
+    #find leading edge index
+    le_idx = np.argmin(x)
+    n = len(x)
+
+    #if in Selif format
+    if 0 < le_idx < n-1:
+        #slice from TE to LE
+        seg_a = slice(0, le_idx + 1)
+        #slice from LE to TE
+        seg_b = slice(le_idx, n)
+
+        #flip so all coordinates go from LE to TE
+        xa, ya = x[seg_a][::-1], y[seg_a][::-1]
+        xb, yb = x[seg_b], y[seg_b]
+
+        #determine which is upper/lower surface
+        if np.mean(ya) > np.mean(yb):
+            xu, yu = xa, ya
+            xl, yl = xb, yb
+        else:
+            xu, yu = xb, yb
+            xl, yl = xa, ya
+
+#if not in Selig format
+    else:
+        raise ValueError("Coordinates must be in Selig format")
+    
+    #unique values are required for fitting splines
+    xu, yu = deduplicate(xu, yu)
+    xl, yl = deduplicate(xl, yl)
+
+    return xu, yu, xl, yl
+
+def deduplicate(x, y):
+    #find index of unique values
+    _,idx = np.unique(x, return_index=True)
+    return x[idx], y[idx]
+
+def arc_length(x, y):
+    """Cumulative arc length along a surface, normalized to [0, 1]."""
+    dx = np.diff(x)
+    dy = np.diff(y)
+    ds = np.sqrt(dx**2 + dy**2)
+    s = np.concatenate([[0.0], np.cumsum(ds)])
+    s /= s[-1]  # normalize to [0, 1]
+    return s
+
+def resample_surface(x, y, n):
+    #resample surfaces using arc length 
+    s = arc_length(x, y)
+    s_new = cosine_spacing(n)  #denser at LE (s=0) and TE (s=1)
+    
+    x_spl = PchipInterpolator(s, x)
+    y_spl = PchipInterpolator(s, y)
+    
+    return x_spl(s_new), y_spl(s_new)
+
+def get_c_t(xu, yu, xl, yl, n_common):
+
+    #resample each surface to the same number of points
+    xu_r, yu_r = resample_surface(xu, yu, n_common)
+    xl_r, yl_r = resample_surface(xl, yl, n_common)
+
+    #now interpolate both onto a shared x grid using Pchip
+    #(surfaces are now smooth so x-space interpolation works fine)
+    x_common = cosine_spacing(n_common)
+    
+    yu_interp = PchipInterpolator(xu_r, yu_r, extrapolate=False)(x_common)
+    yl_interp = PchipInterpolator(xl_r, yl_r, extrapolate=False)(x_common)
+    
+    yu_interp = np.nan_to_num(yu_interp, nan=0.0)
+    yl_interp = np.nan_to_num(yl_interp, nan=0.0)
+
+    camber = 0.5 * (yu_interp + yl_interp)
+    thickness = yu_interp - yl_interp
+
+    #pin leading edge at 0
+    camber[0] = 0.0
+    thickness[0] = 0.0
+    thickness = np.clip(thickness, 0, None)
+
+    return x_common, camber, thickness
+
+#using an analytic function works better than spline interppolation for the camberline
+def analytical_camber(x, max_camber, max_camber_loc):
+   #NACA 4 digit style parabolic camber line
+    p = max_camber_loc
+    m = max_camber
+    camber = np.where(
+        x < p,
+        m / p**2 * (2*p*x - x**2),
+        m / (1-p)**2 * ((1 - 2*p) + 2*p*x - x**2)
+    )
+    return camber
 
 def cosine_spacing(n):
-    """n points in [0, 1], denser at the endpoints."""
-    return 0.5 * (1.0 - np.cos(np.linspace(0.0, np.pi, n)))
+    beta = np.linspace(0, np.pi, n)
+    return 1/2 * (1 - np.cos(beta))
 
+#uses spline interpolation to return either new camber or thickness distribution based on design parameters
+def morph(x_seed, val_seed, x_new, val_new, x_cos_coords, s):
+    #x_seed = common evaluation coordinates for seed
+    #val_seed = seed values for camber/thickness
+    #x_new = desired max camber/thickness location
+    #val_new = desired max camber/thickness
+    #x_cos_coords = cosine spacing points for new airfoil dist.
 
-# -----------------------------------------------------------------------
-# Seed decomposition
-# -----------------------------------------------------------------------
+    n_pts = len(x_seed)
+    #s_val = s if s is not None else n_pts * (1e-5 ** 2)
 
-def decompose_seed(x, y, n=200):
-    """
-    Decompose a Selig-ordered seed into camber and thickness on a
-    shared cosine x-grid.
+    #find seed peak location
+    peak_idx = np.argmax(np.abs(val_seed))
+    x_peak_seed = x_seed[peak_idx]
+    val_peak_seed = val_seed[peak_idx]
 
-    We work in an upright frame: temporarily flip the seed so that the
-    geometric upper surface (the one farther from the camber line in
-    +y) is on top. The returned 'inverted' flag tells the caller
-    whether the original seed was upside down so the final morphed
-    airfoil can be flipped back to match.
+    #NEED TO ADJUST LEADING EDGE, SHOULD NOT BE FORCED TO 0??
+    #use a cubic spline to smoothly fit points between 0, adjusted max value, and 1 (using 5 control points, can be adjusted later)
+    x_map = np.array([0.0, x_peak_seed*0.5, x_peak_seed, x_peak_seed + (1.0 - x_peak_seed)*0.5, 1.0])
+    x_map_adj = np.array([0.0, x_new*0.5, x_new, x_new + (1.0 - x_new)*0.5, 1.0])
+    morph_surf = PchipInterpolator(x_map, x_map_adj)
+    x_morph = np.clip(morph_surf(x_seed), 0, 1)
 
-    Returns (x_grid, camber_upright, thickness, inverted).
-    """
-    x = np.asarray(x, float)
-    y = np.asarray(y, float)
+    #scale amplitude values
+    scale = val_new / val_peak_seed
+    val_morph = val_seed * scale
 
-    le = int(np.argmin(x))
+    #sort values 
+    sort_idx = np.argsort(x_morph)
+    x_morph_sort = x_morph[sort_idx]
+    val_morph_sort = val_morph[sort_idx]
 
-    # Split at LE. Reverse first half so both run LE -> TE.
-    xa, ya = x[: le + 1][::-1], y[: le + 1][::-1]
-    xb, yb = x[le:], y[le:]
+    #remove duplicate values (required for splines)
+    x_morph_sort, unique_idx = np.unique(x_morph_sort, return_index=True)
+    val_morph_sort = val_morph_sort[unique_idx]
 
-    # In an upright airfoil, the upper surface (higher mean y) appears
-    # first in the file (the file starts at TE_upper, descends to LE).
-    # If the seed is upright, mean(ya) > mean(yb).
-    # If inverted (rear wing), the suction bulge is on the bottom and
-    # mean(ya) < mean(yb) -- the file starts at TE_lower.
-    inverted = np.mean(ya) <= np.mean(yb)
+    #use Pchip instead of UnivariateSpline to prevent overshoot
+    spl_fit = PchipInterpolator(x_morph_sort, val_morph_sort, extrapolate=False)
+    final_morph = spl_fit(x_cos_coords)
+    final_morph = np.nan_to_num(final_morph, nan=0.0)
 
-    if inverted:
-        # Flip the seed vertically so we can work in an upright frame.
-        ya, yb = -ya, -yb
+    return final_morph
 
-    # In the (now-upright) frame: ya is the upper surface (high y).
-    if np.mean(ya) > np.mean(yb):
-        xu, yu, xl, yl = xa, ya, xb, yb
-    else:
-        xu, yu, xl, yl = xb, yb, xa, ya
-
-    # Drop any non-monotone-x points (rare LE wobbles in raw seed files
-    # break PCHIP, which needs strictly increasing x).
-    def _strict(x, y):
+#function fixes most osciallations at leading edge by preventing doubling back and negative x-values
+def fix_le(xu, yu, xl, yl, n=160):
+    def clean_and_resample(x, y, n):
         keep = [0]
         for i in range(1, len(x)):
-            if x[i] > x[keep[-1]]:
+            #keep point only if x increases and stays non-negative
+            if x[i] > x[keep[-1]] and x[i] >= 0.0:
                 keep.append(i)
-        return x[keep], y[keep]
-    xu, yu = _strict(xu, yu)
-    xl, yl = _strict(xl, yl)
+        x_clean = x[keep]
+        y_clean = y[keep]
 
-    # Common x-grid from the LE to the shorter of the two TEs.
-    x_max = min(xu[-1], xl[-1])
-    x_grid = cosine_spacing(n) * x_max
+        x_new = cosine_spacing(n)
+        #clip coordinates to stay withing the cleaned range
+        x_new = np.clip(x_new, x_clean[0], x_clean[-1])
+        #fits Pchip spline through cleaned coordinates and evaluates it at all x_new points
+        y_new = PchipInterpolator(x_clean, y_clean)(x_new)
 
-    yu_g = PchipInterpolator(xu, yu)(x_grid)
-    yl_g = PchipInterpolator(xl, yl)(x_grid)
+        return x_new, y_new
 
-    camber = 0.5 * (yu_g + yl_g)
-    thickness = yu_g - yl_g
+    xu_fixed, yu_fixed = clean_and_resample(xu, yu, n)
+    xl_fixed, yl_fixed = clean_and_resample(xl, yl, n)
 
-    return x_grid, camber, thickness, inverted
+    #trim trailing edge to prevent irregular coordinates 
+    te_cutoff = 0.97 #trimming starting at 97% of chord)
+    #trim coordinates
+    mask_u = xu_fixed <= te_cutoff
+    mask_l = xl_fixed <= te_cutoff
+    xu_fixed = xu_fixed[mask_u]
+    yu_fixed = yu_fixed[mask_u]
+    xl_fixed = xl_fixed[mask_l]
+    yl_fixed = yl_fixed[mask_l]
 
+    return xu_fixed, yu_fixed, xl_fixed, yl_fixed
 
-# -----------------------------------------------------------------------
-# Morphing
-# -----------------------------------------------------------------------
+#rebuild airfoil based on new camber and thickness distributions
+def rebuild(x, camber, thickness):
+    #linspace to compute dydx (using cosine coordinates blows this up)
+    x_uniform = np.linspace(0, 1, len(x))
+    #interpolate camber distribution and evaluate x_uniform
+    camber_uniform = PchipInterpolator(x, camber)(x_uniform)
 
-def naca4_camber(x, m, p):
-    """NACA 4-digit parabolic camber line. Positive m bows up."""
-    if m == 0.0 or p == 0.0 or p == 1.0:
-        return np.zeros_like(x)
-    fwd = m / p**2 * (2*p*x - x**2)
-    aft = m / (1 - p)**2 * ((1 - 2*p) + 2*p*x - x**2)
-    return np.where(x < p, fwd, aft)
+    #calculate gradient and map it back to cosine coordinates
+    dydx_uniform = np.gradient(camber_uniform, x_uniform)
+    dydx = PchipInterpolator(x_uniform, dydx_uniform)(x)
+    #prevent slope from going beyond +-2 rad
+    dydx = np.clip(dydx, -2.0, 2.0)
+    #force trailing edge and leading edge to have 0 slope (thickness added vertically instead of normal here)
+    dydx[0] = 0.0
+    dydx[-1] = 0.0
 
+    #compute angle theta
+    theta = np.arctan(dydx)
 
-def warp_thickness(t_seed, x_grid, t_max_new, x_t_new):
-    """
-    Warp seed thickness t_seed(x_grid) to have peak t_max_new at x_t_new.
+    #blend: 0 = pure vertical, 1 = full perpendicular
+    blend = np.ones_like(x)
+    #use vertical application for first 30% and last 10% of chord (otherwise many oscillations)
+    le_end = np.searchsorted(x, 0.30)
+    te_start = np.searchsorted(x, 0.90)
+    blend[:le_end] = np.linspace(0, 1, le_end)
+    blend[te_start:] = np.linspace(1, 0, len(x) - te_start)
+    theta_blended = theta * blend
 
-    Piecewise-linear x-warp mapping the seed peak location to x_t_new
-    with the endpoints fixed. Amplitude is rescaled to hit t_max_new.
-    """
-    t_seed = np.asarray(t_seed)
-    x_grid = np.asarray(x_grid)
-    L = x_grid[-1]
-
-    i_peak = int(np.argmax(np.abs(t_seed)))
-    x_peak = x_grid[i_peak]
-    t_peak = t_seed[i_peak]
-    if t_peak == 0.0:
-        return np.zeros_like(x_grid)
-
-    def w_inv(x):
-        u = np.empty_like(x)
-        left = x < x_t_new
-        u[left]  = x[left] * (x_peak / x_t_new)
-        u[~left] = x_peak + (x[~left] - x_t_new) * (L - x_peak) / (L - x_t_new)
-        return np.clip(u, x_grid[0], x_grid[-1])
-
-    t_amp = t_seed * (t_max_new / t_peak)
-    return PchipInterpolator(x_grid, t_amp)(w_inv(x_grid))
-
-
-# -----------------------------------------------------------------------
-# Build airfoil from (camber, thickness)
-# -----------------------------------------------------------------------
-
-def build_loop(x_grid, camber, thickness):
-    """
-    Assemble a closed Selig loop from camber and thickness in upright
-    orientation:
-
-        y_upper = c + t/2  (bulge on top, suction surface on top)
-        y_lower = c - t/2
-
-        Selig order: TE_upper -> LE -> TE_lower
-
-    Caller flips the result vertically if the seed was inverted.
-    """
     half_t = 0.5 * thickness
-    yu = camber + half_t
-    yl = camber - half_t
 
-    upper = np.column_stack([x_grid[::-1], yu[::-1]])   # TE -> LE
-    lower = np.column_stack([x_grid[1:],   yl[1:]])     # skip duplicate LE
-    return np.vstack([upper, lower])
+    #generate coordinates by adding thickness normal to camberline
+    xu = x - half_t * np.sin(theta_blended)
+    yu = camber + half_t * np.cos(theta_blended)
+    xl = x + half_t * np.sin(theta_blended)
+    yl = camber - half_t * np.cos(theta_blended)
 
+    return xu, yu, xl, yl
 
-# -----------------------------------------------------------------------
-# Top-level
-# -----------------------------------------------------------------------
+def trim_te(xu, yu, xl, yl, te_cutoff=0.99):
+    #cut any points past te_cutoff on either surface (MSES will remesh TE to close surfaces)
+    mask_u = xu <= te_cutoff
+    mask_l = xl <= te_cutoff
+    return xu[mask_u], yu[mask_u], xl[mask_l], yl[mask_l]
 
-def new_airfoil(design, seed_path, n=160):
-    """
-    Build a morphed airfoil from the seed at seed_path.
+def get_aoa(x, y):
+    #estimate the angle of attack from the geometry by finding the chord line and computing its angle
+    le_idx = np.argmin(x)
+    te_idx = np.argmax(x)
+    
+    dx = x[te_idx] - x[le_idx]
+    dy = y[te_idx] - y[le_idx]
+    
+    #print(np.arctan2(dy, dx))
 
-    Parameters
-    ----------
-    design : has fields max_camber, max_camber_loc, max_thickness, max_thickness_loc
-    seed_path : path to a Selig-format .dat / .txt file
-    n : points per surface (~160 is what MSES is happy with)
+    return np.arctan2(dy, dx)  #radians
 
-    Returns
-    -------
-    coords : (2n - 1, 2) array, Selig order, open TE.
-        If the seed was inverted (rear-wing orientation), the output is
-        flipped vertically to match.
-    """
-    x_seed, y_seed = load_airfoil_dat(seed_path)
-    x_grid, _, t_seed, inverted = decompose_seed(x_seed, y_seed, n=200)
+def rotate_airfoil(x, y, angle_rad):
+    #rotate coordinates by -angle_rad to align chord with x-axis
+    cos_a = np.cos(-angle_rad)
+    sin_a = np.sin(-angle_rad)
+    
+    x_rot = x * cos_a - y * sin_a
+    y_rot = x * sin_a + y * cos_a
+    
+    return x_rot, y_rot
 
-    # Resample seed thickness onto the output grid.
-    x_out = cosine_spacing(n) * x_grid[-1]
-    t_seed_out = PchipInterpolator(x_grid, t_seed)(x_out)
+def unrotate_airfoil(x, y, angle_rad):
+    #rotate back by +angle_rad after processing
+    cos_a = np.cos(angle_rad)
+    sin_a = np.sin(angle_rad)
+    
+    x_rot = x * cos_a - y * sin_a
+    y_rot = x * sin_a + y * cos_a
+    
+    return x_rot, y_rot
 
-    # New camber: analytic NACA-4 (bows up in the upright frame).
-    camber = naca4_camber(x_out / x_grid[-1],
-                          design.max_camber, design.max_camber_loc)
+#PHASE TWO: TWO ELEMENT, OPTIMIZING ROTATING ELEMENT
+def scale_airfoil(points, scale, origin=(0.0, 0.0)):
 
-    # New thickness from seed warp. Force non-negative.
-    thickness = np.abs(warp_thickness(t_seed_out, x_out,
-                                      design.max_thickness, design.max_thickness_loc))
+    origin = np.array(origin)
+    return origin + scale * (points - origin)
 
-    # Re-add the seed's chord-line slope so the morphed airfoil keeps
-    # the seed's installed angle. (After temporarily flipping for
-    # decomposition, we still want the same chord angle in the upright
-    # frame; flipping back later will negate y including this slope.)
-    le = int(np.argmin(x_seed))
-    te = int(np.argmax(x_seed))
-    dx = x_seed[te] - x_seed[le]
-    dy = y_seed[te] - y_seed[le]
-    if dx > 0:
-        slope = dy / dx
-        if inverted:
-            # Seed was inverted; the slope we measured is in the inverted
-            # frame. In our upright working frame, the chord goes the
-            # other way.
-            slope = -slope
-        camber = camber + slope * x_out
+def translate_airfoil(points, dx, dy):
+    translated_points = points.copy()
 
-    coords = build_loop(x_out, camber, thickness)
+    #shift points by dx and dy
+    translated_points[:,0] = translated_points[:,0] + dx
+    translated_points[:,1] = translated_points[:,1] + dy
 
-    # If the seed was inverted, flip the output back so it matches.
-    if inverted:
-        coords = coords.copy()
-        coords[:, 1] = -coords[:, 1]
+    return translated_points
 
-    return coords
+#FOR PHASE 3 (IN PROGRESS)
+def rotate_airfoil_phase3(points, angle_deg, pivot=(0.0,0.0)):
 
+    #convert to radians
+    angle_rad = np.radians(angle_deg)
+    rotation_matrix = np.array([[np.cos(angle_rad), -np.sin(angle_rad)],
+                               [np.sin(angle_rad), np.cos(angle_rad)]])
+    
+    pivot = np.array(pivot)
 
-# -----------------------------------------------------------------------
-# Phase 2 / 3 placement helpers
-# -----------------------------------------------------------------------
+    shifted_points = points - pivot
+    #multiply each point by the rotation matrix transpose
+    rotated_points = shifted_points @ rotation_matrix.T
+    rotated_points = rotated_points + pivot
 
-def place_second_element(coords, scale=0.435,
-                         h=SECOND_ELM_LOC["horizontal"],
-                         v=SECOND_ELM_LOC["vertical"]):
-    out = coords * scale
-    out[:, 0] += h
-    out[:, 1] += v
-    return out
+    return rotated_points
 
+def get_coords_phase3(sec_el_pts, aoa_deg):
+    
+    #second element leading edge
+    leading_edge = sec_el_pts[np.argmin(sec_el_pts[:,0])]
 
-def rotate_about(coords, angle_deg, pivot):
-    a = np.radians(angle_deg)
-    R = np.array([[np.cos(a), -np.sin(a)], [np.sin(a), np.cos(a)]])
-    return (coords - np.asarray(pivot)) @ R.T + np.asarray(pivot)
+    #rotate phase 2 airfoil about second element leading edge
+    rotated_sec_el = rotate_airfoil_phase3(sec_el_pts, aoa_deg, pivot=leading_edge)
 
+    return rotated_sec_el
 
-# -----------------------------------------------------------------------
-# Plotting (kept for phase1.py compatibility)
-# -----------------------------------------------------------------------
+def plot_phase3(fixed_el_pts, sec_el_pts, aoa_deg):
 
-def plot_airfoil(design, seed_path, phase, fixed_el_pts=None, aoa_phase3=0.0):
-    coords = new_airfoil(design, seed_path)
-    if phase == 2:
-        coords = place_second_element(coords)
-    if phase == 3 and aoa_phase3 != 0.0:
-        le = coords[int(np.argmin(coords[:, 0]))]
-        coords = rotate_about(coords, aoa_phase3, pivot=le)
+    phase3_coords = get_coords_phase3(sec_el_pts=sec_el_pts, aoa_deg=aoa_deg)
 
-    plt.figure()
-    if fixed_el_pts is not None:
-        plt.plot(fixed_el_pts[:, 0], fixed_el_pts[:, 1], "-")
-    plt.plot(coords[:, 0], coords[:, 1], "-")
-    plt.xlabel("x/c"); plt.ylabel("y/c")
-    plt.grid(True); plt.axis("equal")
+    #plot fixed element
+    plt.plot(fixed_el_pts[:,0], fixed_el_pts[:,1], "-")
+    #plot rotated second element
+    plt.plot(phase3_coords[:,0], phase3_coords[:,1],"-")
+
+    #format plot
+    plt.xlabel("x/c, dimensionless")
+    plt.ylabel("y/c, dimensionless")
+    plt.grid(True)
+    plt.axis("equal")
     plt.show()
+
+
+#FOR IMPORTING AND EXPORTING COORDINATES
+def get_coords(xu_morph, xl_morph, yu_morph, yl_morph, phase, aoa_deg= 0.0):
+    #get data from second element location dictionary
+    h = SECOND_ELM_LOC["horizontal"]
+    v = SECOND_ELM_LOC["vertical"]
+    #create arrays with upper and lower points (in Selig format)
+    upper = np.column_stack((xu_morph[::-1], yu_morph[::-1]))
+    lower = np.column_stack((xl_morph, yl_morph))
+    points = np.vstack((upper, lower[1:]))
+    
+    if phase == 2:
+        points_scaled = scale_airfoil(points, scale=0.435, origin=(0.0, 0.0))
+        translated_pts = translate_airfoil(points_scaled, h, v)
+        points = translated_pts
+    
+    return points
+
+#function to import dat file (coordinates must be in Selig format)
+def load_airfoil_dat(filepath: str):
+    x_list, y_list = [], []
+    with open(filepath) as f:
+        for line in f:
+            #split coordinates based on white space
+            parts = line.split()
+            #if line has two values
+            if len(parts) == 2:
+                try:
+                    x_list.append(float(parts[0]))
+                    y_list.append(float(parts[1]))
+                #skip if cannot be converted to a float
+                except ValueError:
+                    pass
+    return np.array(x_list), np.array(y_list)
+
+def export_mses_geometry(filename, elements):
+
+    with open(filename, "w") as f:
+
+        f.write(f"{len(elements)}\n")
+
+        for i, element in enumerate(elements):
+
+            f.write(f"element_{i+1}\n")
+
+            for point in element:
+                f.write(f"{point[0]:.6f} {point[1]:.6f}\n")
+
+            f.write("\n") 
